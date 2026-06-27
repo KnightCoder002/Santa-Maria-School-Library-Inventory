@@ -1,0 +1,2858 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Library — Management System</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --navy: #1a2744;
+      --navy-light: #243560;
+      --navy-deep: #111a30;
+      --gold: #c9a84c;
+      --gold-light: #e2c97a;
+      --parchment: #f7f3ec;
+      --parchment-dark: #ede8df;
+      --sage: #7a9e7e;
+      --crimson: #8b3a3a;
+      --crimson-light: #a84848;
+      --text-dark: #1a1a2e;
+      --text-mid: #4a4a6a;
+      --text-light: #8a8aaa;
+      --white: #ffffff;
+      --success: #3a7d55;
+      --warning: #c97c2a;
+      --danger: #8b3a3a;
+      --border: #ddd8ce;
+      --shadow: 0 4px 24px rgba(26, 39, 68, 0.10);
+      --shadow-lg: 0 8px 40px rgba(26, 39, 68, 0.16);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--parchment);
+      color: var(--text-dark);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── SCREENS ── */
+    .screen {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ══════════════════════════════════════
+     LANDING PAGE
+  ══════════════════════════════════════ */
+    #screen-landing {
+      background: var(--navy);
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #screen-landing::before {
+      content: '';
+      position: absolute;
+      top: -120px;
+      right: -120px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(201, 168, 76, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    #screen-landing::after {
+      content: '';
+      position: absolute;
+      bottom: -80px;
+      left: -80px;
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, rgba(122, 158, 126, 0.10) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .landing-inner {
+      width: 100%;
+      max-width: 960px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .landing-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .landing-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .logo-mark {
+      width: 52px;
+      height: 52px;
+      background: var(--gold);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .logo-text {
+      text-align: left;
+    }
+
+    .logo-text .school-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gold-light);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .logo-text .system-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    .landing-tagline {
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 14px;
+      letter-spacing: 0.5px;
+    }
+
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .role-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 16px;
+      padding: 40px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .role-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(201, 168, 76, 0.0) 0%, rgba(201, 168, 76, 0.06) 100%);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .role-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+    }
+
+    .role-card:hover::before {
+      opacity: 1;
+    }
+
+    .role-icon {
+      font-size: 42px;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .role-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      color: var(--white);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .role-desc {
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .role-badge {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .badge-student {
+      background: rgba(122, 158, 126, 0.2);
+      color: var(--sage);
+    }
+
+    .badge-librarian {
+      background: rgba(201, 168, 76, 0.2);
+      color: var(--gold-light);
+    }
+
+    .badge-principal {
+      background: rgba(139, 58, 58, 0.25);
+      color: #d47a7a;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 15, 30, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-lg);
+      animation: modalIn 0.2s ease;
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .modal-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .modal-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      color: var(--navy);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .modal-sub {
+      color: var(--text-light);
+      font-size: 13px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-mid);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      color: var(--text-dark);
+      background: var(--parchment);
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: var(--navy);
+      background: var(--white);
+    }
+
+    .error-msg {
+      color: var(--crimson);
+      font-size: 13px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--navy);
+      color: var(--white);
+      width: 100%;
+      padding: 14px;
+    }
+
+    .btn-primary:hover {
+      background: var(--navy-light);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-mid);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--navy);
+      color: var(--navy);
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: var(--navy-deep);
+    }
+
+    .btn-gold:hover {
+      background: var(--gold-light);
+    }
+
+    .btn-danger {
+      background: var(--crimson);
+      color: var(--white);
+    }
+
+    .btn-danger:hover {
+      background: var(--crimson-light);
+    }
+
+    .btn-sm {
+      padding: 7px 14px;
+      font-size: 12px;
+    }
+
+    .modal-cancel {
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .modal-cancel button {
+      background: none;
+      border: none;
+      color: var(--text-light);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .modal-cancel button:hover {
+      color: var(--text-dark);
+    }
+
+    /* ══════════════════════════════════════
+     APP SHELL (all logged-in views)
+  ══════════════════════════════════════ */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: var(--navy);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .topbar-logo {
+      font-family: 'Playfair Display', serif;
+      color: var(--white);
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar-logo span {
+      color: var(--gold);
+    }
+
+    .topbar-divider {
+      width: 1px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .topbar-role {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .role-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .dot-student {
+      background: var(--sage);
+    }
+
+    .dot-librarian {
+      background: var(--gold);
+    }
+
+    .dot-principal {
+      background: #d47a7a;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .topbar-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover,
+    .nav-btn.active {
+      color: var(--white);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-btn.active {
+      color: var(--gold-light);
+    }
+
+    .logout-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.7);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      padding: 7px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: rgba(139, 58, 58, 0.3);
+      border-color: rgba(139, 58, 58, 0.5);
+      color: #f0a0a0;
+    }
+
+    .page-content {
+      flex: 1;
+      padding: 32px;
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      margin-bottom: 28px;
+    }
+
+    .page-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      color: var(--navy);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+      color: var(--text-light);
+      font-size: 14px;
+    }
+
+    /* ── TABS ── */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 28px;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-light);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: var(--navy);
+    }
+
+    .tab.active {
+      color: var(--navy);
+      border-bottom-color: var(--navy);
+      font-weight: 600;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      color: var(--navy);
+      font-weight: 600;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── STAT CARDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 22px 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-sub {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    .stat-card.warning .stat-value {
+      color: var(--warning);
+    }
+
+    .stat-card.danger .stat-value {
+      color: var(--crimson);
+    }
+
+    .stat-card.success .stat-value {
+      color: var(--success);
+    }
+
+    /* ── SEARCH & FILTER BAR ── */
+    .search-filter-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .search-wrap {
+      flex: 1;
+      min-width: 240px;
+      position: relative;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      padding: 11px 16px 11px 42px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--text-dark);
+      background: var(--white);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-wrap input:focus {
+      border-color: var(--navy);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      font-size: 16px;
+      pointer-events: none;
+    }
+
+    .filter-select {
+      padding: 11px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--text-dark);
+      background: var(--white);
+      outline: none;
+      cursor: pointer;
+      min-width: 160px;
+      transition: border-color 0.2s;
+    }
+
+    .filter-select:focus {
+      border-color: var(--navy);
+    }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      font-size: 14px;
+    }
+
+    thead {
+      background: var(--navy);
+    }
+
+    thead th {
+      padding: 13px 18px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.7);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--parchment-dark);
+      transition: background 0.15s;
+    }
+
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: var(--parchment);
+    }
+
+    tbody td {
+      padding: 13px 18px;
+      color: var(--text-dark);
+      vertical-align: middle;
+    }
+
+    .empty-row td {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-light);
+      font-style: italic;
+    }
+
+    /* ── BADGES / CHIPS ── */
+    .chip {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .chip-fiction {
+      background: #e8f0fe;
+      color: #3558a8;
+    }
+
+    .chip-nonfiction {
+      background: #e8f5e9;
+      color: #2e7d45;
+    }
+
+    .chip-available {
+      background: #e8f5e9;
+      color: #2e7d45;
+    }
+
+    .chip-checked {
+      background: #fff3e0;
+      color: #b35c00;
+    }
+
+    .chip-overdue {
+      background: #fce8e8;
+      color: #8b3a3a;
+    }
+
+    .chip-returned {
+      background: #f3f3f3;
+      color: #666;
+    }
+
+    .chip-good {
+      background: #e8f5e9;
+      color: #2e7d45;
+    }
+
+    .chip-fair {
+      background: #fff8e1;
+      color: #b36a00;
+    }
+
+    .chip-poor {
+      background: #fff3e0;
+      color: #b35c00;
+    }
+
+    .chip-damaged {
+      background: #fce8e8;
+      color: #8b3a3a;
+    }
+
+    /* ── ALERTS ── */
+    .alert {
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .alert-warning {
+      background: #fff8ed;
+      border: 1px solid #f5d79e;
+      color: #7a4a00;
+    }
+
+    .alert-danger {
+      background: #fff0f0;
+      border: 1px solid #f5a0a0;
+      color: #6b2020;
+    }
+
+    .alert-success {
+      background: #f0faf3;
+      border: 1px solid #9dd4af;
+      color: #1e5c35;
+    }
+
+    /* ── FORMS / PANELS ── */
+    .panel {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--text-dark);
+      background: var(--parchment);
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .input-field:focus {
+      border-color: var(--navy);
+      background: var(--white);
+    }
+
+    .field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-mid);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+
+    .field-optional {
+      font-weight: 400;
+      color: var(--text-light);
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 11px;
+    }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      padding: 14px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 9999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      max-width: 360px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    #toast.success {
+      background: var(--success);
+      color: var(--white);
+    }
+
+    #toast.error {
+      background: var(--crimson);
+      color: var(--white);
+    }
+
+    #toast.info {
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    /* ── LOADING ── */
+    .loading-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px;
+      gap: 16px;
+      color: var(--text-light);
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--navy);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── GENRE ANALYTICS ── */
+    .genre-bar-wrap {
+      margin-bottom: 10px;
+    }
+
+    .genre-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-mid);
+      margin-bottom: 5px;
+    }
+
+    .genre-bar-track {
+      height: 8px;
+      background: var(--parchment-dark);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .genre-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--navy), var(--navy-light));
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+
+    /* ── GRID LAYOUTS ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+    }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      color: var(--navy);
+      font-weight: 600;
+    }
+
+    /* ── OVERDUE FLAG ── */
+    .overdue-flag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #fce8e8;
+      color: var(--crimson);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .due-soon-flag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #fff3e0;
+      color: var(--warning);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* ── CONFIG SETUP ── */
+    #screen-setup {
+      background: var(--parchment);
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .setup-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 48px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+    }
+
+    .setup-step {
+      display: none;
+    }
+
+    .setup-step.active {
+      display: block;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .role-grid {
+        grid-template-columns: 1fr;
+        max-width: 380px;
+        margin: 0 auto;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .two-col,
+      .three-col {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row,
+      .form-row-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .page-content {
+        padding: 20px 16px;
+      }
+
+      .topbar {
+        padding: 0 16px;
+      }
+
+      .topbar-nav {
+        display: none;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .modal {
+        padding: 28px 20px;
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 24px 0;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .mt-4 {
+      margin-top: 16px;
+    }
+
+    .mt-6 {
+      margin-top: 24px;
+    }
+
+    .mb-4 {
+      margin-bottom: 16px;
+    }
+
+    .gap-2 {
+      gap: 8px;
+    }
+
+    .flex {
+      display: flex;
+    }
+
+    .items-center {
+      align-items: center;
+    }
+
+    .justify-between {
+      justify-content: space-between;
+    }
+
+    .flex-wrap {
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ══════════════════════════════════════
+     SCREEN: SETUP (first-run config)
+══════════════════════════════════════ -->
+  <div class="screen" id="screen-setup">
+    <div class="setup-card">
+      <div class="setup-step active" id="setup-step-1">
+        <div style="text-align:center;margin-bottom:32px;">
+          <div style="font-size:48px;margin-bottom:16px;">📚</div>
+          <h1 style="font-family:'Playfair Display',serif;font-size:26px;color:var(--navy);margin-bottom:8px;">Welcome
+            to Library Manager</h1>
+          <p style="color:var(--text-light);font-size:14px;">Let's connect your Google Sheet to get started. This only
+            takes a minute.</p>
+        </div>
+
+        <div
+          style="background:var(--parchment);border-radius:var(--radius-sm);padding:20px;margin-bottom:28px;font-size:13px;color:var(--text-mid);line-height:1.8;">
+          <strong style="color:var(--navy);">Before you continue, make sure you have:</strong><br>
+          ✅ &nbsp;Created a Google Sheet with 3 tabs: <code>Inventory</code>, <code>Checkouts</code>,
+          <code>Genres</code><br>
+          ✅ &nbsp;Set the Sheet to <em>"Anyone with the link can edit"</em><br>
+          ✅ &nbsp;Your Google Sheets API key ready
+        </div>
+
+        <div class="form-group">
+          <label>Google Sheet ID</label>
+          <input type="text" id="setup-sheet-id" placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+            class="input-field" style="width:100%">
+          <p style="font-size:12px;color:var(--text-light);margin-top:6px;">Found in your sheet's URL:
+            docs.google.com/spreadsheets/d/<strong>[THIS PART]</strong>/edit</p>
+        </div>
+
+        <div class="form-group">
+          <label>Google Sheets API Key</label>
+          <input type="text" id="setup-api-key" placeholder="AIza..." class="input-field" style="width:100%">
+          <p style="font-size:12px;color:var(--text-light);margin-top:6px;">From Google Cloud Console → APIs & Services
+            → Credentials</p>
+        </div>
+
+        <div class="form-group">
+          <label>School Name</label>
+          <input type="text" id="setup-school-name" placeholder="e.g. St. Mary's High School" class="input-field"
+            style="width:100%">
+        </div>
+
+        <div id="setup-error" class="error-msg" style="display:none;margin-bottom:12px;"></div>
+
+        <button class="btn btn-primary" onclick="saveSetup()">Connect & Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+     SCREEN: LANDING
+══════════════════════════════════════ -->
+  <div class="screen" id="screen-landing">
+    <div class="landing-inner">
+      <div class="landing-header">
+        <div class="landing-logo">
+          <div class="logo-mark">📚</div>
+          <div class="logo-text">
+            <div class="school-name" id="landing-school-name">School Library</div>
+            <div class="system-name">Library Management System</div>
+          </div>
+        </div>
+        <p class="landing-tagline">Select your role to continue</p>
+      </div>
+
+      <div class="role-grid">
+        <div class="role-card" onclick="openLogin('student')">
+          <span class="role-icon">🎒</span>
+          <div class="role-title">Student</div>
+          <p class="role-desc">Browse the library catalogue, search for books, and check availability.</p>
+          <span class="role-badge badge-student">View Access</span>
+        </div>
+
+        <div class="role-card" onclick="openLogin('librarian')">
+          <span class="role-icon">📖</span>
+          <div class="role-title">Librarian</div>
+          <p class="role-desc">Manage checkouts, track due dates, and view overdue books.</p>
+          <span class="role-badge badge-librarian">Checkout Access</span>
+        </div>
+
+        <div class="role-card" onclick="openLogin('principal')">
+          <span class="role-icon">🏛️</span>
+          <div class="role-title">Principal</div>
+          <p class="role-desc">Full access — manage inventory, view analytics, and oversee all activity.</p>
+          <span class="role-badge badge-principal">Full Access</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+     MODAL: LOGIN
+══════════════════════════════════════ -->
+  <div class="modal-overlay" id="login-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-icon" id="modal-icon">📖</div>
+        <div class="modal-title" id="modal-title">Librarian Login</div>
+        <div class="modal-sub" id="modal-sub">Enter your password to continue</div>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Enter password"
+          onkeydown="if(event.key==='Enter')doLogin()">
+        <div class="error-msg" id="login-error">Incorrect password. Please try again.</div>
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+      <div class="modal-cancel"><button onclick="closeLogin()">← Back to role selection</button></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+     SCREEN: STUDENT
+══════════════════════════════════════ -->
+  <div class="screen" id="screen-student">
+    <div class="app-shell">
+      <nav class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-logo">📚 <span id="topbar-school-student">Library</span></div>
+          <div class="topbar-divider"></div>
+          <div class="topbar-role"><span class="role-dot dot-student"></span> Student</div>
+        </div>
+        <div class="topbar-right">
+          <button class="logout-btn" onclick="logout()">Sign Out</button>
+        </div>
+      </nav>
+
+      <div class="page-content">
+        <div class="page-header">
+          <h1 class="page-title">Library Catalogue</h1>
+          <p class="page-subtitle">Browse and search all available books</p>
+        </div>
+
+        <div class="search-filter-bar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="student-search" placeholder="Search by title or author..."
+              oninput="renderStudentTable()">
+          </div>
+          <select class="filter-select" id="student-genre-filter" onchange="updateStudentSubgenreFilter()">
+            <option value="">All Genres</option>
+            <option value="Fiction">Fiction</option>
+            <option value="Non-Fiction">Non-Fiction</option>
+          </select>
+          <select class="filter-select" id="student-subgenre-filter" onchange="renderStudentTable()">
+            <option value="">All Sub-genres</option>
+          </select>
+          <select class="filter-select" id="student-age-filter" onchange="renderStudentTable()">
+            <option value="">All Age Groups</option>
+            <option value="Junior (Gr. 1–5)">Junior (Gr. 1–5)</option>
+            <option value="Middle (Gr. 6–8)">Middle (Gr. 6–8)</option>
+            <option value="Senior (Gr. 9–12)">Senior (Gr. 9–12)</option>
+            <option value="All Ages">All Ages</option>
+          </select>
+          <select class="filter-select" id="student-avail-filter" onchange="renderStudentTable()">
+            <option value="">All Availability</option>
+            <option value="Yes">Available</option>
+            <option value="No">Checked Out</option>
+          </select>
+        </div>
+
+        <div id="student-loading" class="loading-wrap">
+          <div class="spinner"></div>
+          <span>Loading catalogue…</span>
+        </div>
+
+        <div id="student-table-wrap" class="table-wrap hidden">
+          <table id="student-table">
+            <thead>
+              <tr>
+                <th>Book ID</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Genre</th>
+                <th>Sub-genre</th>
+                <th>Age Group</th>
+                <th>Availability</th>
+              </tr>
+            </thead>
+            <tbody id="student-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+     SCREEN: LIBRARIAN
+══════════════════════════════════════ -->
+  <div class="screen" id="screen-librarian">
+    <div class="app-shell">
+      <nav class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-logo">📚 <span id="topbar-school-librarian">Library</span></div>
+          <div class="topbar-divider"></div>
+          <div class="topbar-role"><span class="role-dot dot-librarian"></span> Librarian</div>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-nav">
+            <button class="nav-btn active" onclick="libTab('dashboard')" id="lib-tab-dashboard">Dashboard</button>
+            <button class="nav-btn" onclick="libTab('checkout')" id="lib-tab-checkout">Check Out</button>
+            <button class="nav-btn" onclick="libTab('records')" id="lib-tab-records">Records</button>
+            <button class="nav-btn" onclick="libTab('catalogue')" id="lib-tab-catalogue">Catalogue</button>
+          </div>
+          <button class="logout-btn" onclick="logout()">Sign Out</button>
+        </div>
+      </nav>
+
+      <div class="page-content">
+
+        <!-- Dashboard -->
+        <div id="lib-dashboard">
+          <div class="page-header">
+            <h1 class="page-title">Librarian Dashboard</h1>
+            <p class="page-subtitle" id="lib-date-display"></p>
+          </div>
+          <div class="stats-grid" id="lib-stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Total Books</div>
+              <div class="stat-value" id="lib-stat-total">—</div>
+              <div class="stat-sub">in catalogue</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Checked Out</div>
+              <div class="stat-value" id="lib-stat-checked">—</div>
+              <div class="stat-sub">currently with students</div>
+            </div>
+            <div class="stat-card warning">
+              <div class="stat-label">Due Soon</div>
+              <div class="stat-value" id="lib-stat-due-soon">—</div>
+              <div class="stat-sub">within 3 days</div>
+            </div>
+            <div class="stat-card danger">
+              <div class="stat-label">Overdue</div>
+              <div class="stat-value" id="lib-stat-overdue">—</div>
+              <div class="stat-sub">past due date</div>
+            </div>
+          </div>
+
+          <div id="lib-overdue-alert"></div>
+
+          <div class="two-col">
+            <div class="card">
+              <div class="card-title">🔴 Overdue Books</div>
+              <div id="lib-overdue-list">
+                <div class="loading-wrap" style="padding:24px;">
+                  <div class="spinner"></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">🕐 Due Within 3 Days</div>
+              <div id="lib-duesoon-list">
+                <div class="loading-wrap" style="padding:24px;">
+                  <div class="spinner"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Check Out -->
+        <div id="lib-checkout" class="hidden">
+          <div class="page-header">
+            <h1 class="page-title">Check Out a Book</h1>
+            <p class="page-subtitle">Enter the student's roll number and select the book being checked out</p>
+          </div>
+
+          <div class="panel">
+            <div class="card-title" style="margin-bottom:24px;">📋 New Checkout</div>
+            <div class="form-row" style="margin-bottom:16px;">
+              <div>
+                <label class="field-label">Student Roll Number</label>
+                <input type="text" id="checkout-roll" class="input-field" placeholder="e.g. 2024-11A-042">
+              </div>
+              <div>
+                <label class="field-label">Loan Duration <span class="field-optional">(days)</span></label>
+                <input type="number" id="checkout-days" class="input-field" value="14" min="1" max="90">
+              </div>
+            </div>
+
+            <div style="margin-bottom:16px;">
+              <label class="field-label">Search Book to Check Out</label>
+              <div class="search-wrap" style="margin-bottom:12px;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="checkout-book-search" class="input-field" style="padding-left:42px;"
+                  placeholder="Type title or author…" oninput="renderCheckoutBookList()">
+              </div>
+              <div id="checkout-book-list" class="table-wrap" style="max-height:280px;overflow-y:auto;display:none;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Book ID</th>
+                      <th>Title</th>
+                      <th>Author</th>
+                      <th>Sub-genre</th>
+                      <th>Status</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="checkout-book-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="checkout-selected-book" class="hidden"
+              style="background:var(--parchment);border-radius:var(--radius-sm);padding:16px;margin-bottom:16px;border:1.5px solid var(--gold);">
+              <div
+                style="font-size:12px;font-weight:600;color:var(--text-light);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">
+                Selected Book</div>
+              <div id="checkout-selected-title"
+                style="font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);font-weight:600;"></div>
+              <div id="checkout-selected-meta" style="font-size:13px;color:var(--text-mid);margin-top:4px;"></div>
+            </div>
+
+            <div id="checkout-error" class="alert alert-danger hidden"></div>
+
+            <button class="btn btn-gold" onclick="submitCheckout()" style="margin-top:8px;">✓ Confirm Checkout</button>
+          </div>
+        </div>
+
+        <!-- Records -->
+        <div id="lib-records" class="hidden">
+          <div class="page-header">
+            <h1 class="page-title">Checkout Records</h1>
+            <p class="page-subtitle">All current and past borrowing activity</p>
+          </div>
+
+          <div class="search-filter-bar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="records-search" placeholder="Search by roll number or title…"
+                oninput="renderRecordsTable()">
+            </div>
+            <select class="filter-select" id="records-status-filter" onchange="renderRecordsTable()">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="overdue">Overdue</option>
+              <option value="returned">Returned</option>
+            </select>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Roll No.</th>
+                  <th>Book</th>
+                  <th>Book ID</th>
+                  <th>Checked Out</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="records-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Catalogue (read for librarian) -->
+        <div id="lib-catalogue" class="hidden">
+          <div class="page-header">
+            <h1 class="page-title">Book Catalogue</h1>
+            <p class="page-subtitle">Full library inventory — view only</p>
+          </div>
+          <div class="search-filter-bar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="lib-cat-search" placeholder="Search by title or author…"
+                oninput="renderLibCatalogueTable()">
+            </div>
+            <select class="filter-select" id="lib-cat-genre" onchange="updateLibCatSubgenre()">
+              <option value="">All Genres</option>
+              <option value="Fiction">Fiction</option>
+              <option value="Non-Fiction">Non-Fiction</option>
+            </select>
+            <select class="filter-select" id="lib-cat-subgenre" onchange="renderLibCatalogueTable()">
+              <option value="">All Sub-genres</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Book ID</th>
+                  <th>Title</th>
+                  <th>Author</th>
+                  <th>Genre</th>
+                  <th>Sub-genre</th>
+                  <th>Age Group</th>
+                  <th>Condition</th>
+                  <th>Available</th>
+                </tr>
+              </thead>
+              <tbody id="lib-cat-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+     SCREEN: PRINCIPAL
+══════════════════════════════════════ -->
+  <div class="screen" id="screen-principal">
+    <div class="app-shell">
+      <nav class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-logo">📚 <span id="topbar-school-principal">Library</span></div>
+          <div class="topbar-divider"></div>
+          <div class="topbar-role"><span class="role-dot dot-principal"></span> Principal</div>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-nav">
+            <button class="nav-btn active" onclick="prinTab('dashboard')" id="prin-tab-dashboard">Dashboard</button>
+            <button class="nav-btn" onclick="prinTab('inventory')" id="prin-tab-inventory">Inventory</button>
+            <button class="nav-btn" onclick="prinTab('add-book')" id="prin-tab-add-book">Add Book</button>
+            <button class="nav-btn" onclick="prinTab('checkouts')" id="prin-tab-checkouts">Checkouts</button>
+            <button class="nav-btn" onclick="prinTab('analytics')" id="prin-tab-analytics">Analytics</button>
+            <button class="nav-btn" onclick="prinTab('genres')" id="prin-tab-genres">Genres</button>
+          </div>
+          <button class="logout-btn" onclick="logout()">Sign Out</button>
+        </div>
+      </nav>
+
+      <div class="page-content">
+
+        <!-- Dashboard -->
+        <div id="prin-dashboard">
+          <div class="page-header">
+            <h1 class="page-title">Principal's Overview</h1>
+            <p class="page-subtitle" id="prin-date-display"></p>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Total Books</div>
+              <div class="stat-value" id="prin-stat-total">—</div>
+              <div class="stat-sub">in catalogue</div>
+            </div>
+            <div class="stat-card success">
+              <div class="stat-label">Available</div>
+              <div class="stat-value" id="prin-stat-available">—</div>
+              <div class="stat-sub">on shelves now</div>
+            </div>
+            <div class="stat-card warning">
+              <div class="stat-label">Checked Out</div>
+              <div class="stat-value" id="prin-stat-checked">—</div>
+              <div class="stat-sub">with students</div>
+            </div>
+            <div class="stat-card danger">
+              <div class="stat-label">Overdue</div>
+              <div class="stat-value" id="prin-stat-overdue">—</div>
+              <div class="stat-sub">past due date</div>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="card">
+              <div class="card-title">📚 Inventory by Genre</div>
+              <div id="prin-genre-bars"></div>
+            </div>
+            <div class="card">
+              <div class="card-title">🔴 Overdue Summary</div>
+              <div id="prin-overdue-summary"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventory Management -->
+        <div id="prin-inventory" class="hidden">
+          <div class="page-header">
+            <h1 class="page-title">Inventory Management</h1>
+            <p class="page-subtitle">View, edit, and remove books from the catalogue</p>
+          </div>
+          <div class="search-filter-bar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="prin-inv-search" placeholder="Search title or author…"
+                oninput="renderPrinInventory()">
+            </div>
+            <select class="filter-select" id="prin-inv-genre" onchange="updatePrinInvSubgenre()">
+              <option value="">All Genres</option>
+              <option value="Fiction">Fiction</option>
+              <option value="Non-Fiction">Non-Fiction</option>
+            </select>
+            <select class="filter-select" id="prin-inv-subgenre" onchange="renderPrinInventory()">
+              <option value="">All Sub-genres</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Book ID</th>
+                  <th>Title</th>
+                  <th>Author</th>
+                  <th>Sub-genre</th>
+                  <th>Age Group</th>
+                  <th>Condition</th>
+                  <th>Available</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="prin-inv-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Add Book -->
+        <div id="prin-add-book" class="hidden">
+          <div class="page-header">
+            <h1 class="page-title">Add New Book</h1>
+            <p class="page-subtitle">Enter the book's details — the Book ID will be generated automatically</p>
+          </div>
+
+          <div class="panel">
+            <div class="form-row" style="margin-bottom:16px;">
+              <div>
+                <label class="field-label">Title</label>
+                <input type="text" id="add-title" class="input-field" placeholder="Book title">
+              </div>
+              <div>
+                <label class="field-label">Author</label>
+                <input type="text" id="add-author" class="input-field" placeholder="Author name">
+              </div>
+            </div>
+
+            <div class="form-row" style="margin-bottom:16px;">
+              <div>
+                <label class="field-label">Genre</label>
+                <select id="add-genre" class="input-field" onchange="populateAddSubgenre()">
+                  <option value="">Select genre…</option>
+                  <option value="Fiction">Fiction</option>
+                  <option value="Non-Fiction">Non-Fiction</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label">Sub-genre</label>
+                <select id="add-subgenre" class="input-field">
+                  <option value="">Select genre first…</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row" style="margin-bottom:16px;">
+              <div>
+                <label class="field-label">Age Group <span class="field-optional">optional</span></label>
+                <select id="add-age" class="input-field">
+                  <option value="">Not specified</option>
+                  <option value="Junior (Gr. 1–5)">Junior (Gr. 1–5)</option>
+                  <option value="Middle (Gr. 6–8)">Middle (Gr. 6–8)</option>
+                  <option value="Senior (Gr. 9–12)">Senior (Gr. 9–12)</option>
+                  <option value="All Ages">All Ages</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label">Condition <span class="field-optional">optional</span></label>
+                <select id="add-condition" class="input-field">
+                  <option value="">Not noted</option>
+                  <option value="Good">Good</option>
+                  <option value="Fair">Fair</option>
+                  <option value="Poor">Poor</option>
+                  <option value="Damaged">Damaged</option>
+                </select>
+              </div>
+            </div>
+
+            <div
+              style="background:var(--parchment);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;font-size:13px;color:var(--text-mid);">
+              📌 Book ID will be auto-generated based on the selected genre and sub-genre (e.g.
+              <strong>FIC-MYS-001</strong>)
+            </div>
+
+            <div id="add-book-error" class="alert alert-danger hidden"></div>
+
+            <button class="btn btn-gold" onclick="submitAddBook()">+ Add to Catalogue</button>
+          </div>
+        </div>
+
+        <!-- Checkout Records -->
+        <div id="prin-checkouts" class="hidden">
+          <div class="page-header">
+            <h1 class="page-title">Checkout Records</h1>
+            <p class="page-subtitle">All borrowing activity across all students</p>
+          </div>
+          <div class="search-filter-bar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="prin-co-search" placeholder="Search roll number or title…"
+                oninput="renderPrinCheckouts()">
+            </div>
+            <select class="filter-select" id="prin-co-status" onchange="renderPrinCheckouts()">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="overdue">Overdue</option>
+              <option value="returned">Returned</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Roll No.</th>
+                  <th>Book</th>
+                  <th>Book ID</th>
+                  <th>Checked Out</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="prin-co-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Analytics -->
+        <div id="prin-analytics" class="hidden">
+          <div class="page-header">
+            <h1 class="page-title">Library Analytics</h1>
+            <p class="page-subtitle">Usage patterns and borrowing statistics</p>
+          </div>
+
+          <div class="two-col" style="margin-bottom:24px;">
+            <div class="card">
+              <div class="card-title">📊 Checkouts by Genre</div>
+              <div id="analytics-genre-bars"></div>
+            </div>
+            <div class="card">
+              <div class="card-title">🏆 Most Borrowed Books</div>
+              <div id="analytics-top-books"></div>
+            </div>
+          </div>
+
+          <div class="two-col">
+            <div class="card">
+              <div class="card-title">👤 Most Active Students</div>
+              <div id="analytics-top-students"></div>
+            </div>
+            <div class="card">
+              <div class="card-title">📅 Monthly Checkout Trend</div>
+              <div id="analytics-monthly"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Genre Management -->
+        <div id="prin-genres" class="hidden">
+          <div class="page-header">
+            <h1 class="page-title">Genre Management</h1>
+            <p class="page-subtitle">Add new genres and sub-genres to the system</p>
+          </div>
+
+          <div class="two-col">
+            <div class="panel" style="margin-bottom:0;">
+              <div class="card-title" style="margin-bottom:20px;">+ Add New Sub-genre</div>
+              <div style="margin-bottom:16px;">
+                <label class="field-label">Parent Genre</label>
+                <select id="genre-parent" class="input-field">
+                  <option value="Fiction">Fiction</option>
+                  <option value="Non-Fiction">Non-Fiction</option>
+                </select>
+              </div>
+              <div style="margin-bottom:16px;">
+                <label class="field-label">Sub-genre Name</label>
+                <input type="text" id="genre-new-name" class="input-field" placeholder="e.g. Thriller">
+              </div>
+              <button class="btn btn-gold" onclick="addGenre()">Add Sub-genre</button>
+            </div>
+
+            <div class="card" style="box-shadow:var(--shadow);">
+              <div class="card-title">Current Genres</div>
+              <div id="genres-list"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+     MODAL: CONFIRM REMOVE BOOK
+══════════════════════════════════════ -->
+  <div class="modal-overlay" id="remove-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-icon">⚠️</div>
+        <div class="modal-title">Remove Book</div>
+        <div class="modal-sub" id="remove-modal-sub">This will permanently remove the book from the catalogue.</div>
+      </div>
+      <div id="remove-book-info"
+        style="background:var(--parchment);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;font-size:14px;color:var(--text-mid);">
+      </div>
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeRemoveModal()">Cancel</button>
+        <button class="btn btn-danger" style="flex:1;" onclick="confirmRemove()">Remove Book</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <script>
+    // ══════════════════════════════════════
+    // CONFIG & STATE
+    // ══════════════════════════════════════
+    let CONFIG = {
+      sheetId: 'https://docs.google.com/spreadsheets/d/1aeUpGJxhxGsTu-QihUjp6e31b-fZjo8CDKbX2gx4Aj4/edit?gid=0#gid=0',
+      apiKey: 'AIzaSyC5QyJBq9hoDFMi6kHckFwmceQhVl_jEgI',
+      schoolName: 'Santa Maria School'
+    };
+
+    const PASSWORDS = {
+      student: 'student123',
+      librarian: 'librarian123',
+      principal: 'principal123'
+    };
+
+    let currentRole = null;
+    let inventoryCache = [];
+    let checkoutsCache = [];
+    let genresCache = [];
+    let selectedCheckoutBook = null;
+    let bookToRemove = null;
+
+    // Genre → sub-genre map (loaded from sheet + defaults)
+    const DEFAULT_GENRES = {
+      'Fiction': ['Historical Fiction', 'Mystery', 'Fantasy', 'Folktale', 'Science Fiction'],
+      'Non-Fiction': ['Biographies', 'Poetry']
+    };
+
+    // ══════════════════════════════════════
+    // INIT
+    // ══════════════════════════════════════
+    window.onload = () => {
+      const saved = localStorage.getItem('library_config');
+      if (saved) {
+        CONFIG = JSON.parse(saved);
+        showScreen('landing');
+        document.querySelectorAll('[id^="landing-school-name"], [id^="topbar-school"]').forEach(el => {
+          el.textContent = CONFIG.schoolName;
+        });
+        document.getElementById('landing-school-name').textContent = CONFIG.schoolName;
+      } else {
+        showScreen('setup');
+      }
+    };
+
+    function saveSetup() {
+      const id = document.getElementById('setup-sheet-id').value.trim();
+      const key = document.getElementById('setup-api-key').value.trim();
+      const name = document.getElementById('setup-school-name').value.trim();
+      const err = document.getElementById('setup-error');
+
+      if (!id || !key || !name) {
+        err.textContent = 'Please fill in all fields.';
+        err.style.display = 'block';
+        return;
+      }
+
+      CONFIG = { sheetId: id, apiKey: key, schoolName: name };
+      localStorage.setItem('library_config', JSON.stringify(CONFIG));
+      err.style.display = 'none';
+      showScreen('landing');
+      document.getElementById('landing-school-name').textContent = name;
+      document.querySelectorAll('[id^="topbar-school"]').forEach(el => el.textContent = name);
+    }
+
+    // ══════════════════════════════════════
+    // SCREEN ROUTING
+    // ══════════════════════════════════════
+    function showScreen(name) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + name).classList.add('active');
+    }
+
+    // ══════════════════════════════════════
+    // LOGIN
+    // ══════════════════════════════════════
+    const ROLE_META = {
+      student: { icon: '🎒', title: 'Student Login', sub: 'Enter the student password to browse the catalogue' },
+      librarian: { icon: '📖', title: 'Librarian Login', sub: 'Enter your password to access checkout management' },
+      principal: { icon: '🏛️', title: 'Principal Login', sub: 'Enter your password to access full system controls' }
+    };
+
+    function openLogin(role) {
+      currentRole = role;
+      const meta = ROLE_META[role];
+      document.getElementById('modal-icon').textContent = meta.icon;
+      document.getElementById('modal-title').textContent = meta.title;
+      document.getElementById('modal-sub').textContent = meta.sub;
+      document.getElementById('login-password').value = '';
+      document.getElementById('login-error').style.display = 'none';
+      document.getElementById('login-modal').classList.add('open');
+      setTimeout(() => document.getElementById('login-password').focus(), 100);
+    }
+
+    function closeLogin() {
+      document.getElementById('login-modal').classList.remove('open');
+      currentRole = null;
+    }
+
+    function doLogin() {
+      const pw = document.getElementById('login-password').value;
+      if (pw === PASSWORDS[currentRole]) {
+        document.getElementById('login-modal').classList.remove('open');
+        enterDashboard(currentRole);
+      } else {
+        document.getElementById('login-error').style.display = 'block';
+        document.getElementById('login-password').select();
+      }
+    }
+
+    function logout() {
+      currentRole = null;
+      inventoryCache = [];
+      checkoutsCache = [];
+      showScreen('landing');
+    }
+
+    // ══════════════════════════════════════
+    // DASHBOARD ENTRY
+    // ══════════════════════════════════════
+    async function enterDashboard(role) {
+      document.querySelectorAll('[id^="topbar-school"]').forEach(el => el.textContent = CONFIG.schoolName);
+      showScreen(role);
+
+      if (role === 'student') {
+        document.getElementById('student-loading').classList.remove('hidden');
+        document.getElementById('student-table-wrap').classList.add('hidden');
+        await loadData();
+        document.getElementById('student-loading').classList.add('hidden');
+        document.getElementById('student-table-wrap').classList.remove('hidden');
+        renderStudentTable();
+      }
+
+      if (role === 'librarian') {
+        libTab('dashboard');
+        document.getElementById('lib-date-display').textContent = formatDate(new Date());
+        await loadData();
+        updateLibDashboard();
+      }
+
+      if (role === 'principal') {
+        prinTab('dashboard');
+        document.getElementById('prin-date-display').textContent = formatDate(new Date());
+        await loadData();
+        updatePrinDashboard();
+      }
+    }
+
+    // ══════════════════════════════════════
+    // GOOGLE SHEETS API
+    // ══════════════════════════════════════
+    async function sheetsGet(range) {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}/values/${encodeURIComponent(range)}?key=${CONFIG.apiKey}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Sheets API error: ' + res.status);
+      const data = await res.json();
+      return data.values || [];
+    }
+
+    async function sheetsAppend(range, values) {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&key=${CONFIG.apiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values })
+      });
+      if (!res.ok) throw new Error('Sheets write error: ' + res.status);
+      return res.json();
+    }
+
+    async function sheetsUpdate(range, values) {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW&key=${CONFIG.apiKey}`;
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values })
+      });
+      if (!res.ok) throw new Error('Sheets update error: ' + res.status);
+      return res.json();
+    }
+
+    async function sheetsClear(range) {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.sheetId}/values/${encodeURIComponent(range)}:clear?key=${CONFIG.apiKey}`;
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      if (!res.ok) throw new Error('Sheets clear error: ' + res.status);
+      return res.json();
+    }
+
+    // ══════════════════════════════════════
+    // DATA LOADING
+    // ══════════════════════════════════════
+    async function loadData() {
+      try {
+        const [invRows, coRows, genreRows] = await Promise.all([
+          sheetsGet('Inventory!A2:H'),
+          sheetsGet('Checkouts!A2:G'),
+          sheetsGet('Genres!A2:B')
+        ]);
+
+        inventoryCache = invRows.map(r => ({
+          bookId: r[0] || '',
+          title: r[1] || '',
+          author: r[2] || '',
+          genre: r[3] || '',
+          subgenre: r[4] || '',
+          ageGroup: r[5] || '',
+          available: r[6] || 'Yes',
+          condition: r[7] || ''
+        }));
+
+        checkoutsCache = coRows.map(r => ({
+          checkoutId: r[0] || '',
+          rollNumber: r[1] || '',
+          bookId: r[2] || '',
+          title: r[3] || '',
+          checkoutDate: r[4] || '',
+          dueDate: r[5] || '',
+          returned: r[6] || 'No'
+        }));
+
+        genresCache = genreRows.map(r => ({ genre: r[0] || '', subgenre: r[1] || '' }));
+
+      } catch (e) {
+        showToast('Could not load data. Check your Sheet ID and API key.', 'error');
+        console.error(e);
+      }
+    }
+
+    // ══════════════════════════════════════
+    // HELPERS
+    // ══════════════════════════════════════
+    function formatDate(d) {
+      if (!d) return '';
+      if (typeof d === 'string') d = new Date(d);
+      return d.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function formatDateShort(d) {
+      if (!d) return '';
+      if (typeof d === 'string') d = new Date(d);
+      return d.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function daysFromNow(dateStr) {
+      const due = new Date(dateStr);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      due.setHours(0, 0, 0, 0);
+      return Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+    }
+
+    function getStatus(checkout) {
+      if (checkout.returned === 'Yes') return 'returned';
+      const days = daysFromNow(checkout.dueDate);
+      if (days < 0) return 'overdue';
+      return 'active';
+    }
+
+    function statusChip(status, daysLeft) {
+      if (status === 'returned') return '<span class="chip chip-returned">Returned</span>';
+      if (status === 'overdue') return `<span class="overdue-flag">⚠ Overdue ${Math.abs(daysLeft)}d</span>`;
+      if (daysLeft <= 3) return `<span class="due-soon-flag">⏰ Due in ${daysLeft}d</span>`;
+      return `<span class="chip chip-checked">Active · Due in ${daysLeft}d</span>`;
+    }
+
+    function conditionChip(c) {
+      if (!c) return '—';
+      const cls = { Good: 'good', Fair: 'fair', Poor: 'poor', Damaged: 'damaged' }[c] || '';
+      return `<span class="chip chip-${cls}">${c}</span>`;
+    }
+
+    function genreChip(genre) {
+      const cls = genre === 'Fiction' ? 'fiction' : 'nonfiction';
+      return `<span class="chip chip-${cls}">${genre}</span>`;
+    }
+
+    function genreCode(subgenre) {
+      return subgenre.substring(0, 3).toUpperCase();
+    }
+
+    function genrePrefix(genre) {
+      return genre === 'Fiction' ? 'FIC' : genre === 'Non-Fiction' ? 'NF' : genre.substring(0, 3).toUpperCase();
+    }
+
+    function generateBookId(genre, subgenre) {
+      const prefix = `${genrePrefix(genre)}-${genreCode(subgenre)}`;
+      const existing = inventoryCache.filter(b => b.bookId.startsWith(prefix + '-'));
+      let max = 0;
+      existing.forEach(b => {
+        const parts = b.bookId.split('-');
+        const num = parseInt(parts[parts.length - 1]) || 0;
+        if (num > max) max = num;
+      });
+      return `${prefix}-${String(max + 1).padStart(3, '0')}`;
+    }
+
+    function todayISO() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function addDays(dateStr, days) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + days);
+      return d.toISOString().split('T')[0];
+    }
+
+    function genCheckoutId() {
+      return 'CO-' + Date.now().toString(36).toUpperCase();
+    }
+
+    function getSubgenresForGenre(genre) {
+      const fromSheet = genresCache.filter(g => g.genre === genre).map(g => g.subgenre);
+      const defaults = DEFAULT_GENRES[genre] || [];
+      const merged = [...new Set([...defaults, ...fromSheet])];
+      return merged;
+    }
+
+    // ══════════════════════════════════════
+    // TOAST
+    // ══════════════════════════════════════
+    let toastTimer;
+    function showToast(msg, type = 'info') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `show ${type}`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.className = ''; }, 3200);
+    }
+
+    // ══════════════════════════════════════
+    // STUDENT VIEW
+    // ══════════════════════════════════════
+    function updateStudentSubgenreFilter() {
+      const genre = document.getElementById('student-genre-filter').value;
+      const sub = document.getElementById('student-subgenre-filter');
+      sub.innerHTML = '<option value="">All Sub-genres</option>';
+      if (genre) {
+        getSubgenresForGenre(genre).forEach(s => {
+          sub.innerHTML += `<option value="${s}">${s}</option>`;
+        });
+      }
+      renderStudentTable();
+    }
+
+    function renderStudentTable() {
+      const q = document.getElementById('student-search').value.toLowerCase();
+      const genre = document.getElementById('student-genre-filter').value;
+      const subgenre = document.getElementById('student-subgenre-filter').value;
+      const age = document.getElementById('student-age-filter').value;
+      const avail = document.getElementById('student-avail-filter').value;
+
+      let books = inventoryCache.filter(b => {
+        if (q && !b.title.toLowerCase().includes(q) && !b.author.toLowerCase().includes(q)) return false;
+        if (genre && b.genre !== genre) return false;
+        if (subgenre && b.subgenre !== subgenre) return false;
+        if (age && b.ageGroup !== age) return false;
+        if (avail && b.available !== avail) return false;
+        return true;
+      });
+
+      const tbody = document.getElementById('student-tbody');
+      if (books.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No books found matching your search.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = books.map(b => `
+    <tr>
+      <td><code style="font-size:12px;color:var(--text-mid);">${b.bookId}</code></td>
+      <td style="font-weight:500;">${b.title}</td>
+      <td>${b.author}</td>
+      <td>${genreChip(b.genre)}</td>
+      <td>${b.subgenre}</td>
+      <td>${b.ageGroup || '—'}</td>
+      <td>${b.available === 'Yes' ? '<span class="chip chip-available">Available</span>' : '<span class="chip chip-checked">Checked Out</span>'}</td>
+    </tr>
+  `).join('');
+    }
+
+    // ══════════════════════════════════════
+    // LIBRARIAN TABS
+    // ══════════════════════════════════════
+    function libTab(tab) {
+      ['dashboard', 'checkout', 'records', 'catalogue'].forEach(t => {
+        document.getElementById('lib-' + t).classList.toggle('hidden', t !== tab);
+        document.getElementById('lib-tab-' + t).classList.toggle('active', t === tab);
+      });
+      if (tab === 'records') renderRecordsTable();
+      if (tab === 'catalogue') renderLibCatalogueTable();
+      if (tab === 'checkout') {
+        document.getElementById('checkout-book-list').style.display = 'none';
+        document.getElementById('checkout-selected-book').classList.add('hidden');
+        selectedCheckoutBook = null;
+      }
+    }
+
+    function updateLibDashboard() {
+      const active = checkoutsCache.filter(c => c.returned !== 'Yes');
+      const overdue = active.filter(c => daysFromNow(c.dueDate) < 0);
+      const dueSoon = active.filter(c => { const d = daysFromNow(c.dueDate); return d >= 0 && d <= 3; });
+
+      document.getElementById('lib-stat-total').textContent = inventoryCache.length;
+      document.getElementById('lib-stat-checked').textContent = active.length;
+      document.getElementById('lib-stat-due-soon').textContent = dueSoon.length;
+      document.getElementById('lib-stat-overdue').textContent = overdue.length;
+
+      // Overdue list
+      const overdueEl = document.getElementById('lib-overdue-list');
+      if (overdue.length === 0) {
+        overdueEl.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0;">No overdue books. 🎉</p>';
+      } else {
+        overdueEl.innerHTML = overdue.map(c => `
+      <div style="padding:10px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:500;font-size:14px;">${c.title}</div>
+          <div style="font-size:12px;color:var(--text-light);">Roll: ${c.rollNumber} · Due: ${formatDateShort(c.dueDate)}</div>
+        </div>
+        <span class="overdue-flag">⚠ ${Math.abs(daysFromNow(c.dueDate))}d late</span>
+      </div>
+    `).join('');
+      }
+
+      // Due soon list
+      const dueSoonEl = document.getElementById('lib-duesoon-list');
+      if (dueSoon.length === 0) {
+        dueSoonEl.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0;">No books due in the next 3 days.</p>';
+      } else {
+        dueSoonEl.innerHTML = dueSoon.map(c => `
+      <div style="padding:10px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:500;font-size:14px;">${c.title}</div>
+          <div style="font-size:12px;color:var(--text-light);">Roll: ${c.rollNumber} · Due: ${formatDateShort(c.dueDate)}</div>
+        </div>
+        <span class="due-soon-flag">⏰ ${daysFromNow(c.dueDate)}d left</span>
+      </div>
+    `).join('');
+      }
+    }
+
+    function renderCheckoutBookList() {
+      const q = document.getElementById('checkout-book-search').value.toLowerCase().trim();
+      const wrap = document.getElementById('checkout-book-list');
+
+      if (!q) { wrap.style.display = 'none'; return; }
+
+      const books = inventoryCache.filter(b =>
+        (b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)) && b.available === 'Yes'
+      );
+
+      wrap.style.display = 'block';
+      const tbody = document.getElementById('checkout-book-tbody');
+
+      if (books.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No available books found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = books.map(b => `
+    <tr>
+      <td><code style="font-size:12px;">${b.bookId}</code></td>
+      <td style="font-weight:500;">${b.title}</td>
+      <td>${b.author}</td>
+      <td>${b.subgenre}</td>
+      <td><span class="chip chip-available">Available</span></td>
+      <td><button class="btn btn-gold btn-sm" onclick="selectCheckoutBook('${b.bookId}')">Select</button></td>
+    </tr>
+  `).join('');
+    }
+
+    function selectCheckoutBook(bookId) {
+      const book = inventoryCache.find(b => b.bookId === bookId);
+      if (!book) return;
+      selectedCheckoutBook = book;
+      document.getElementById('checkout-book-list').style.display = 'none';
+      document.getElementById('checkout-book-search').value = '';
+      const sel = document.getElementById('checkout-selected-book');
+      sel.classList.remove('hidden');
+      document.getElementById('checkout-selected-title').textContent = book.title;
+      document.getElementById('checkout-selected-meta').textContent = `${book.author} · ${book.subgenre} · ID: ${book.bookId}`;
+    }
+
+    async function submitCheckout() {
+      const roll = document.getElementById('checkout-roll').value.trim();
+      const days = parseInt(document.getElementById('checkout-days').value) || 14;
+      const errEl = document.getElementById('checkout-error');
+
+      errEl.classList.add('hidden');
+
+      if (!roll) { errEl.textContent = 'Please enter a student roll number.'; errEl.classList.remove('hidden'); return; }
+      if (!selectedCheckoutBook) { errEl.textContent = 'Please select a book to check out.'; errEl.classList.remove('hidden'); return; }
+
+      // Check if student already has this book
+      const alreadyHas = checkoutsCache.find(c => c.rollNumber === roll && c.bookId === selectedCheckoutBook.bookId && c.returned !== 'Yes');
+      if (alreadyHas) {
+        errEl.textContent = `Roll ${roll} has already checked out this book and not yet returned it.`;
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      const today = todayISO();
+      const due = addDays(today, days);
+      const checkoutId = genCheckoutId();
+
+      try {
+        // Append to Checkouts sheet
+        await sheetsAppend('Checkouts!A:G', [[checkoutId, roll, selectedCheckoutBook.bookId, selectedCheckoutBook.title, today, due, 'No']]);
+
+        // Update availability in Inventory
+        const rowIndex = inventoryCache.findIndex(b => b.bookId === selectedCheckoutBook.bookId);
+        if (rowIndex !== -1) {
+          await sheetsUpdate(`Inventory!G${rowIndex + 2}`, [['No']]);
+          inventoryCache[rowIndex].available = 'No';
+        }
+
+        checkoutsCache.push({ checkoutId, rollNumber: roll, bookId: selectedCheckoutBook.bookId, title: selectedCheckoutBook.title, checkoutDate: today, dueDate: due, returned: 'No' });
+
+        showToast(`✓ "${selectedCheckoutBook.title}" checked out to Roll ${roll}. Due: ${formatDateShort(due)}`, 'success');
+
+        // Reset form
+        document.getElementById('checkout-roll').value = '';
+        document.getElementById('checkout-selected-book').classList.add('hidden');
+        selectedCheckoutBook = null;
+        updateLibDashboard();
+
+      } catch (e) {
+        errEl.textContent = 'Failed to save checkout. Check your API key and Sheet permissions.';
+        errEl.classList.remove('hidden');
+        console.error(e);
+      }
+    }
+
+    function renderRecordsTable() {
+      const q = document.getElementById('records-search').value.toLowerCase();
+      const statusF = document.getElementById('records-status-filter').value;
+
+      let records = checkoutsCache.filter(c => {
+        if (q && !c.rollNumber.toLowerCase().includes(q) && !c.title.toLowerCase().includes(q)) return false;
+        const s = getStatus(c);
+        if (statusF && s !== statusF) return false;
+        return true;
+      }).sort((a, b) => new Date(b.checkoutDate) - new Date(a.checkoutDate));
+
+      const tbody = document.getElementById('records-tbody');
+      if (records.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No records found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = records.map((c, i) => {
+        const s = getStatus(c);
+        const d = daysFromNow(c.dueDate);
+        const realIdx = checkoutsCache.findIndex(x => x.checkoutId === c.checkoutId);
+        return `
+      <tr>
+        <td style="font-weight:600;">${c.rollNumber}</td>
+        <td>${c.title}</td>
+        <td><code style="font-size:12px;color:var(--text-mid);">${c.bookId}</code></td>
+        <td>${formatDateShort(c.checkoutDate)}</td>
+        <td>${formatDateShort(c.dueDate)}</td>
+        <td>${statusChip(s, d)}</td>
+        <td>${s !== 'returned' ? `<button class="btn btn-sm" style="background:var(--success);color:white;" onclick="markReturned(${realIdx})">✓ Return</button>` : '—'}</td>
+      </tr>
+    `;
+      }).join('');
+    }
+
+    async function markReturned(idx) {
+      const c = checkoutsCache[idx];
+      if (!c || c.returned === 'Yes') return;
+
+      try {
+        const rows = await sheetsGet('Checkouts!A:G');
+        const sheetRow = rows.findIndex(r => r[0] === c.checkoutId);
+        if (sheetRow !== -1) {
+          await sheetsUpdate(`Checkouts!G${sheetRow + 1}`, [['Yes']]);
+        }
+
+        // Mark book available again
+        const bookIdx = inventoryCache.findIndex(b => b.bookId === c.bookId);
+        if (bookIdx !== -1) {
+          await sheetsUpdate(`Inventory!G${bookIdx + 2}`, [['Yes']]);
+          inventoryCache[bookIdx].available = 'Yes';
+        }
+
+        checkoutsCache[idx].returned = 'Yes';
+        showToast(`✓ "${c.title}" marked as returned.`, 'success');
+        renderRecordsTable();
+        updateLibDashboard();
+
+      } catch (e) {
+        showToast('Failed to mark as returned. Please try again.', 'error');
+        console.error(e);
+      }
+    }
+
+    function renderLibCatalogueTable() {
+      const q = document.getElementById('lib-cat-search').value.toLowerCase();
+      const genre = document.getElementById('lib-cat-genre').value;
+      const subgenre = document.getElementById('lib-cat-subgenre').value;
+
+      let books = inventoryCache.filter(b => {
+        if (q && !b.title.toLowerCase().includes(q) && !b.author.toLowerCase().includes(q)) return false;
+        if (genre && b.genre !== genre) return false;
+        if (subgenre && b.subgenre !== subgenre) return false;
+        return true;
+      });
+
+      const tbody = document.getElementById('lib-cat-tbody');
+      tbody.innerHTML = books.length === 0
+        ? '<tr class="empty-row"><td colspan="8">No books found.</td></tr>'
+        : books.map(b => `
+        <tr>
+          <td><code style="font-size:12px;">${b.bookId}</code></td>
+          <td style="font-weight:500;">${b.title}</td>
+          <td>${b.author}</td>
+          <td>${genreChip(b.genre)}</td>
+          <td>${b.subgenre}</td>
+          <td>${b.ageGroup || '—'}</td>
+          <td>${conditionChip(b.condition)}</td>
+          <td>${b.available === 'Yes' ? '<span class="chip chip-available">Available</span>' : '<span class="chip chip-checked">Checked Out</span>'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function updateLibCatSubgenre() {
+      const genre = document.getElementById('lib-cat-genre').value;
+      const sub = document.getElementById('lib-cat-subgenre');
+      sub.innerHTML = '<option value="">All Sub-genres</option>';
+      if (genre) getSubgenresForGenre(genre).forEach(s => sub.innerHTML += `<option value="${s}">${s}</option>`);
+      renderLibCatalogueTable();
+    }
+
+    // ══════════════════════════════════════
+    // PRINCIPAL TABS
+    // ══════════════════════════════════════
+    function prinTab(tab) {
+      ['dashboard', 'inventory', 'add-book', 'checkouts', 'analytics', 'genres'].forEach(t => {
+        document.getElementById('prin-' + t).classList.toggle('hidden', t !== tab);
+        document.getElementById('prin-tab-' + t).classList.toggle('active', t === tab);
+      });
+      if (tab === 'inventory') renderPrinInventory();
+      if (tab === 'checkouts') renderPrinCheckouts();
+      if (tab === 'analytics') renderAnalytics();
+      if (tab === 'genres') renderGenresList();
+    }
+
+    function updatePrinDashboard() {
+      const available = inventoryCache.filter(b => b.available === 'Yes').length;
+      const active = checkoutsCache.filter(c => c.returned !== 'Yes');
+      const overdue = active.filter(c => daysFromNow(c.dueDate) < 0);
+
+      document.getElementById('prin-stat-total').textContent = inventoryCache.length;
+      document.getElementById('prin-stat-available').textContent = available;
+      document.getElementById('prin-stat-checked').textContent = active.length;
+      document.getElementById('prin-stat-overdue').textContent = overdue.length;
+
+      // Genre bars
+      const genreCount = {};
+      inventoryCache.forEach(b => { genreCount[b.subgenre] = (genreCount[b.subgenre] || 0) + 1; });
+      const max = Math.max(...Object.values(genreCount), 1);
+      const sorted = Object.entries(genreCount).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      document.getElementById('prin-genre-bars').innerHTML = sorted.map(([sg, count]) => `
+    <div class="genre-bar-wrap">
+      <div class="genre-bar-label"><span>${sg}</span><span>${count}</span></div>
+      <div class="genre-bar-track"><div class="genre-bar-fill" style="width:${(count / max) * 100}%"></div></div>
+    </div>
+  `).join('');
+
+      // Overdue summary
+      const overdueEl = document.getElementById('prin-overdue-summary');
+      if (overdue.length === 0) {
+        overdueEl.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0;">No overdue books currently.</p>';
+      } else {
+        overdueEl.innerHTML = overdue.slice(0, 6).map(c => `
+      <div style="padding:9px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:500;font-size:13px;">${c.title}</div>
+          <div style="font-size:12px;color:var(--text-light);">Roll: ${c.rollNumber}</div>
+        </div>
+        <span class="overdue-flag">${Math.abs(daysFromNow(c.dueDate))}d late</span>
+      </div>
+    `).join('');
+      }
+    }
+
+    function renderPrinInventory() {
+      const q = document.getElementById('prin-inv-search').value.toLowerCase();
+      const genre = document.getElementById('prin-inv-genre').value;
+      const subgenre = document.getElementById('prin-inv-subgenre').value;
+
+      let books = inventoryCache.filter(b => {
+        if (q && !b.title.toLowerCase().includes(q) && !b.author.toLowerCase().includes(q)) return false;
+        if (genre && b.genre !== genre) return false;
+        if (subgenre && b.subgenre !== subgenre) return false;
+        return true;
+      });
+
+      const tbody = document.getElementById('prin-inv-tbody');
+      tbody.innerHTML = books.length === 0
+        ? '<tr class="empty-row"><td colspan="8">No books found.</td></tr>'
+        : books.map((b, i) => {
+          const realIdx = inventoryCache.indexOf(b);
+          return `
+          <tr>
+            <td><code style="font-size:12px;">${b.bookId}</code></td>
+            <td style="font-weight:500;">${b.title}</td>
+            <td>${b.author}</td>
+            <td>${b.subgenre}</td>
+            <td>${b.ageGroup || '—'}</td>
+            <td>${conditionChip(b.condition)}</td>
+            <td>${b.available === 'Yes' ? '<span class="chip chip-available">Available</span>' : '<span class="chip chip-checked">Checked Out</span>'}</td>
+            <td>
+              ${b.available === 'Yes' ? `<button class="btn btn-danger btn-sm" onclick="openRemoveModal(${realIdx})">Remove</button>` : '<span style="font-size:12px;color:var(--text-light);">Checked out</span>'}
+            </td>
+          </tr>
+        `;
+        }).join('');
+    }
+
+    function updatePrinInvSubgenre() {
+      const genre = document.getElementById('prin-inv-genre').value;
+      const sub = document.getElementById('prin-inv-subgenre');
+      sub.innerHTML = '<option value="">All Sub-genres</option>';
+      if (genre) getSubgenresForGenre(genre).forEach(s => sub.innerHTML += `<option value="${s}">${s}</option>`);
+      renderPrinInventory();
+    }
+
+    function openRemoveModal(idx) {
+      bookToRemove = idx;
+      const b = inventoryCache[idx];
+      document.getElementById('remove-book-info').innerHTML = `<strong>${b.title}</strong><br><span style="font-size:12px;color:var(--text-light);">${b.author} · ${b.bookId}</span>`;
+      document.getElementById('remove-modal').classList.add('open');
+    }
+
+    function closeRemoveModal() {
+      document.getElementById('remove-modal').classList.remove('open');
+      bookToRemove = null;
+    }
+
+    async function confirmRemove() {
+      if (bookToRemove === null) return;
+      const b = inventoryCache[bookToRemove];
+
+      try {
+        // We clear the row by overwriting it with blanks, then locally remove it
+        const sheetRow = bookToRemove + 2; // +1 for header, +1 for 1-index
+        await sheetsUpdate(`Inventory!A${sheetRow}:H${sheetRow}`, [['', '', '', '', '', '', '', '']]);
+
+        inventoryCache.splice(bookToRemove, 1);
+        closeRemoveModal();
+        showToast(`"${b.title}" removed from catalogue.`, 'info');
+        renderPrinInventory();
+        updatePrinDashboard();
+
+      } catch (e) {
+        showToast('Failed to remove book. Please try again.', 'error');
+        console.error(e);
+      }
+    }
+
+    function populateAddSubgenre() {
+      const genre = document.getElementById('add-genre').value;
+      const sub = document.getElementById('add-subgenre');
+      sub.innerHTML = '<option value="">Select sub-genre…</option>';
+      if (genre) getSubgenresForGenre(genre).forEach(s => sub.innerHTML += `<option value="${s}">${s}</option>`);
+    }
+
+    async function submitAddBook() {
+      const title = document.getElementById('add-title').value.trim();
+      const author = document.getElementById('add-author').value.trim();
+      const genre = document.getElementById('add-genre').value;
+      const subgenre = document.getElementById('add-subgenre').value;
+      const age = document.getElementById('add-age').value;
+      const condition = document.getElementById('add-condition').value;
+      const errEl = document.getElementById('add-book-error');
+
+      errEl.classList.add('hidden');
+
+      if (!title || !author || !genre || !subgenre) {
+        errEl.textContent = 'Title, author, genre, and sub-genre are required.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      const bookId = generateBookId(genre, subgenre);
+
+      try {
+        await sheetsAppend('Inventory!A:H', [[bookId, title, author, genre, subgenre, age, 'Yes', condition]]);
+        inventoryCache.push({ bookId, title, author, genre, subgenre, ageGroup: age, available: 'Yes', condition });
+
+        showToast(`✓ "${title}" added with ID ${bookId}`, 'success');
+
+        document.getElementById('add-title').value = '';
+        document.getElementById('add-author').value = '';
+        document.getElementById('add-genre').value = '';
+        document.getElementById('add-subgenre').innerHTML = '<option value="">Select genre first…</option>';
+        document.getElementById('add-age').value = '';
+        document.getElementById('add-condition').value = '';
+        updatePrinDashboard();
+
+      } catch (e) {
+        errEl.textContent = 'Failed to add book. Check your API key and Sheet permissions.';
+        errEl.classList.remove('hidden');
+        console.error(e);
+      }
+    }
+
+    function renderPrinCheckouts() {
+      const q = document.getElementById('prin-co-search').value.toLowerCase();
+      const statusF = document.getElementById('prin-co-status').value;
+
+      let records = checkoutsCache.filter(c => {
+        if (q && !c.rollNumber.toLowerCase().includes(q) && !c.title.toLowerCase().includes(q)) return false;
+        const s = getStatus(c);
+        if (statusF && s !== statusF) return false;
+        return true;
+      }).sort((a, b) => new Date(b.checkoutDate) - new Date(a.checkoutDate));
+
+      const tbody = document.getElementById('prin-co-tbody');
+      tbody.innerHTML = records.length === 0
+        ? '<tr class="empty-row"><td colspan="6">No records found.</td></tr>'
+        : records.map(c => {
+          const s = getStatus(c);
+          const d = daysFromNow(c.dueDate);
+          return `
+          <tr>
+            <td style="font-weight:600;">${c.rollNumber}</td>
+            <td>${c.title}</td>
+            <td><code style="font-size:12px;">${c.bookId}</code></td>
+            <td>${formatDateShort(c.checkoutDate)}</td>
+            <td>${formatDateShort(c.dueDate)}</td>
+            <td>${statusChip(s, d)}</td>
+          </tr>
+        `;
+        }).join('');
+    }
+
+    function renderAnalytics() {
+      // Checkouts by genre
+      const byGenre = {};
+      checkoutsCache.forEach(c => {
+        const book = inventoryCache.find(b => b.bookId === c.bookId);
+        if (!book) return;
+        const sg = book.subgenre;
+        byGenre[sg] = (byGenre[sg] || 0) + 1;
+      });
+      const maxG = Math.max(...Object.values(byGenre), 1);
+      const sortedG = Object.entries(byGenre).sort((a, b) => b[1] - a[1]);
+      document.getElementById('analytics-genre-bars').innerHTML = sortedG.length === 0
+        ? '<p style="color:var(--text-light);font-size:13px;">No checkout data yet.</p>'
+        : sortedG.map(([sg, count]) => `
+        <div class="genre-bar-wrap">
+          <div class="genre-bar-label"><span>${sg}</span><span>${count} checkouts</span></div>
+          <div class="genre-bar-track"><div class="genre-bar-fill" style="width:${(count / maxG) * 100}%"></div></div>
+        </div>
+      `).join('');
+
+      // Top books
+      const byBook = {};
+      checkoutsCache.forEach(c => { byBook[c.title] = (byBook[c.title] || 0) + 1; });
+      const topBooks = Object.entries(byBook).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      document.getElementById('analytics-top-books').innerHTML = topBooks.length === 0
+        ? '<p style="color:var(--text-light);font-size:13px;">No data yet.</p>'
+        : topBooks.map(([title, count], i) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--parchment-dark);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:12px;font-weight:700;color:var(--text-light);min-width:20px;">${i + 1}</span>
+            <span style="font-size:13px;font-weight:500;">${title}</span>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:var(--navy);">${count}×</span>
+        </div>
+      `).join('');
+
+      // Top students
+      const byStudent = {};
+      checkoutsCache.forEach(c => { byStudent[c.rollNumber] = (byStudent[c.rollNumber] || 0) + 1; });
+      const topStudents = Object.entries(byStudent).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      document.getElementById('analytics-top-students').innerHTML = topStudents.length === 0
+        ? '<p style="color:var(--text-light);font-size:13px;">No data yet.</p>'
+        : topStudents.map(([roll, count], i) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--parchment-dark);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:12px;font-weight:700;color:var(--text-light);min-width:20px;">${i + 1}</span>
+            <span style="font-size:13px;font-weight:600;">${roll}</span>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:var(--navy);">${count} books</span>
+        </div>
+      `).join('');
+
+      // Monthly trend
+      const byMonth = {};
+      checkoutsCache.forEach(c => {
+        const m = c.checkoutDate.substring(0, 7);
+        byMonth[m] = (byMonth[m] || 0) + 1;
+      });
+      const months = Object.entries(byMonth).sort((a, b) => a[0].localeCompare(b[0])).slice(-6);
+      const maxM = Math.max(...months.map(m => m[1]), 1);
+      document.getElementById('analytics-monthly').innerHTML = months.length === 0
+        ? '<p style="color:var(--text-light);font-size:13px;">No data yet.</p>'
+        : months.map(([month, count]) => `
+        <div class="genre-bar-wrap">
+          <div class="genre-bar-label"><span>${month}</span><span>${count}</span></div>
+          <div class="genre-bar-track"><div class="genre-bar-fill" style="width:${(count / maxM) * 100}%"></div></div>
+        </div>
+      `).join('');
+    }
+
+    // ══════════════════════════════════════
+    // GENRE MANAGEMENT
+    // ══════════════════════════════════════
+    function renderGenresList() {
+      const all = { ...DEFAULT_GENRES };
+      genresCache.forEach(g => {
+        if (!all[g.genre]) all[g.genre] = [];
+        if (!all[g.genre].includes(g.subgenre)) all[g.genre].push(g.subgenre);
+      });
+
+      document.getElementById('genres-list').innerHTML = Object.entries(all).map(([genre, subs]) => `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text-mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">${genre}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${subs.map(s => `<span class="chip" style="background:var(--parchment-dark);color:var(--text-dark);">${s}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+    }
+
+    async function addGenre() {
+      const parent = document.getElementById('genre-parent').value;
+      const name = document.getElementById('genre-new-name').value.trim();
+
+      if (!name) { showToast('Please enter a sub-genre name.', 'error'); return; }
+
+      const existing = getSubgenresForGenre(parent);
+      if (existing.includes(name)) { showToast('This sub-genre already exists.', 'error'); return; }
+
+      try {
+        await sheetsAppend('Genres!A:B', [[parent, name]]);
+        genresCache.push({ genre: parent, subgenre: name });
+        document.getElementById('genre-new-name').value = '';
+        showToast(`✓ "${name}" added under ${parent}.`, 'success');
+        renderGenresList();
+      } catch (e) {
+        showToast('Failed to save genre. Check Sheet permissions.', 'error');
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+
+</html>
