@@ -2373,7 +2373,7 @@ async function submitAddBook() {
     updatePrinDashboard();
 
   } catch (e) {
-    errEl.textContent = 'Failed to add book. Check your API key and Sheet permissions.';
+    errEl.textContent = 'Failed to add book. Check your Apps Script URL and Sheet permissions.';
     errEl.classList.remove('hidden');
     console.error(e);
   }
