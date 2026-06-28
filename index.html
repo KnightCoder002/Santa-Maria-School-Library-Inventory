@@ -1760,9 +1760,11 @@ async function scriptGet(action) {
 }
 
 async function scriptPost(body) {
+  // Apps Script doesn't support CORS preflight, so we use text/plain
+  // which avoids the preflight check while still sending JSON in the body
   const res = await fetch(CONFIG.scriptUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error('Backend error: ' + res.status);
