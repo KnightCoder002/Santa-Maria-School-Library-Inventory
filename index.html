@@ -2030,41 +2030,46 @@ function updateLibDashboard() {
   const overdue = active.filter(c => daysFromNow(c.dueDate) < 0);
   const dueSoon = active.filter(c => { const d = daysFromNow(c.dueDate); return d >= 0 && d <= 3; });
 
-  document.getElementById('lib-stat-total').textContent = inventoryCache.length;
-  document.getElementById('lib-stat-checked').textContent = active.length;
-  document.getElementById('lib-stat-due-soon').textContent = dueSoon.length;
-  document.getElementById('lib-stat-overdue').textContent = overdue.length;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('lib-stat-total', inventoryCache.length);
+  set('lib-stat-checked', active.length);
+  set('lib-stat-due-soon', dueSoon.length);
+  set('lib-stat-overdue', overdue.length);
 
   // Overdue list
   const overdueEl = document.getElementById('lib-overdue-list');
-  if (overdue.length === 0) {
-    overdueEl.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0;">No overdue books. 🎉</p>';
-  } else {
-    overdueEl.innerHTML = overdue.map(c => `
-      <div style="padding:10px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-weight:500;font-size:14px;">${c.title}</div>
-          <div style="font-size:12px;color:var(--text-light);">Roll: ${c.rollNumber} · Due: ${formatDateShort(c.dueDate)}</div>
+  if (overdueEl) {
+    if (overdue.length === 0) {
+      overdueEl.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0;">No overdue books. 🎉</p>';
+    } else {
+      overdueEl.innerHTML = overdue.map(c => `
+        <div style="padding:10px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:500;font-size:14px;">${c.title}</div>
+            <div style="font-size:12px;color:var(--text-light);">Roll: ${c.rollNumber} · Due: ${formatDateShort(c.dueDate)}</div>
+          </div>
+          <span class="overdue-flag">⚠ ${Math.abs(daysFromNow(c.dueDate))}d late</span>
         </div>
-        <span class="overdue-flag">⚠ ${Math.abs(daysFromNow(c.dueDate))}d late</span>
-      </div>
-    `).join('');
+      `).join('');
+    }
   }
 
   // Due soon list
   const dueSoonEl = document.getElementById('lib-duesoon-list');
-  if (dueSoon.length === 0) {
-    dueSoonEl.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0;">No books due in the next 3 days.</p>';
-  } else {
-    dueSoonEl.innerHTML = dueSoon.map(c => `
-      <div style="padding:10px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-weight:500;font-size:14px;">${c.title}</div>
-          <div style="font-size:12px;color:var(--text-light);">Roll: ${c.rollNumber} · Due: ${formatDateShort(c.dueDate)}</div>
+  if (dueSoonEl) {
+    if (dueSoon.length === 0) {
+      dueSoonEl.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0;">No books due in the next 3 days.</p>';
+    } else {
+      dueSoonEl.innerHTML = dueSoon.map(c => `
+        <div style="padding:10px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:500;font-size:14px;">${c.title}</div>
+            <div style="font-size:12px;color:var(--text-light);">Roll: ${c.rollNumber} · Due: ${formatDateShort(c.dueDate)}</div>
+          </div>
+          <span class="due-soon-flag">⏰ ${daysFromNow(c.dueDate)}d left</span>
         </div>
-        <span class="due-soon-flag">⏰ ${daysFromNow(c.dueDate)}d left</span>
-      </div>
-    `).join('');
+      `).join('');
+    }
   }
 }
 
@@ -2279,37 +2284,43 @@ function updatePrinDashboard() {
   const active = checkoutsCache.filter(c => c.returned !== 'Yes');
   const overdue = active.filter(c => daysFromNow(c.dueDate) < 0);
 
-  document.getElementById('prin-stat-total').textContent = inventoryCache.length;
-  document.getElementById('prin-stat-available').textContent = available;
-  document.getElementById('prin-stat-checked').textContent = active.length;
-  document.getElementById('prin-stat-overdue').textContent = overdue.length;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('prin-stat-total', inventoryCache.length);
+  set('prin-stat-available', available);
+  set('prin-stat-checked', active.length);
+  set('prin-stat-overdue', overdue.length);
 
   // Genre bars
-  const genreCount = {};
-  inventoryCache.forEach(b => { genreCount[b.subgenre] = (genreCount[b.subgenre] || 0) + 1; });
-  const max = Math.max(...Object.values(genreCount), 1);
-  const sorted = Object.entries(genreCount).sort((a,b) => b[1]-a[1]).slice(0,8);
-  document.getElementById('prin-genre-bars').innerHTML = sorted.map(([sg, count]) => `
-    <div class="genre-bar-wrap">
-      <div class="genre-bar-label"><span>${sg}</span><span>${count}</span></div>
-      <div class="genre-bar-track"><div class="genre-bar-fill" style="width:${(count/max)*100}%"></div></div>
-    </div>
-  `).join('');
+  const genreBarsEl = document.getElementById('prin-genre-bars');
+  if (genreBarsEl) {
+    const genreCount = {};
+    inventoryCache.forEach(b => { genreCount[b.subgenre] = (genreCount[b.subgenre] || 0) + 1; });
+    const max = Math.max(...Object.values(genreCount), 1);
+    const sorted = Object.entries(genreCount).sort((a,b) => b[1]-a[1]).slice(0,8);
+    genreBarsEl.innerHTML = sorted.map(([sg, count]) => `
+      <div class="genre-bar-wrap">
+        <div class="genre-bar-label"><span>${sg}</span><span>${count}</span></div>
+        <div class="genre-bar-track"><div class="genre-bar-fill" style="width:${(count/max)*100}%"></div></div>
+      </div>
+    `).join('');
+  }
 
   // Overdue summary
   const overdueEl = document.getElementById('prin-overdue-summary');
-  if (overdue.length === 0) {
-    overdueEl.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0;">No overdue books currently.</p>';
-  } else {
-    overdueEl.innerHTML = overdue.slice(0,6).map(c => `
-      <div style="padding:9px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-weight:500;font-size:13px;">${c.title}</div>
-          <div style="font-size:12px;color:var(--text-light);">Roll: ${c.rollNumber}</div>
+  if (overdueEl) {
+    if (overdue.length === 0) {
+      overdueEl.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0;">No overdue books currently.</p>';
+    } else {
+      overdueEl.innerHTML = overdue.slice(0,6).map(c => `
+        <div style="padding:9px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:500;font-size:13px;">${c.title}</div>
+            <div style="font-size:12px;color:var(--text-light);">Roll: ${c.rollNumber}</div>
+          </div>
+          <span class="overdue-flag">${Math.abs(daysFromNow(c.dueDate))}d late</span>
         </div>
-        <span class="overdue-flag">${Math.abs(daysFromNow(c.dueDate))}d late</span>
-      </div>
-    `).join('');
+      `).join('');
+    }
   }
 }
 
