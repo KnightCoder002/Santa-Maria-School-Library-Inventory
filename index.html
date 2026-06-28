@@ -965,48 +965,7 @@
 </head>
 <body>
 
-<!-- ══════════════════════════════════════
-     SCREEN: SETUP (first-run config)
-══════════════════════════════════════ -->
-<div class="screen" id="screen-setup">
-  <div class="setup-card">
-    <div class="setup-step active" id="setup-step-1">
-      <div style="text-align:center;margin-bottom:32px;">
-        <div style="font-size:48px;margin-bottom:16px;">📚</div>
-        <h1 style="font-family:'Playfair Display',serif;font-size:26px;color:var(--navy);margin-bottom:8px;">Welcome to Library Manager</h1>
-        <p style="color:var(--text-light);font-size:14px;">Let's connect your Google Sheet to get started. This only takes a minute.</p>
-      </div>
-
-      <div style="background:var(--parchment);border-radius:var(--radius-sm);padding:20px;margin-bottom:28px;font-size:13px;color:var(--text-mid);line-height:1.8;">
-        <strong style="color:var(--navy);">Before you continue, make sure you have:</strong><br>
-        ✅ &nbsp;Created a Google Sheet with 3 tabs: <code>Inventory</code>, <code>Checkouts</code>, <code>Genres</code><br>
-        ✅ &nbsp;Set the Sheet to <em>"Anyone with the link can edit"</em><br>
-        ✅ &nbsp;Your Google Sheets API key ready
-      </div>
-
-      <div class="form-group">
-        <label>Google Sheet ID</label>
-        <input type="text" id="setup-sheet-id" placeholder="e.g. 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" class="input-field" style="width:100%">
-        <p style="font-size:12px;color:var(--text-light);margin-top:6px;">Found in your sheet's URL: docs.google.com/spreadsheets/d/<strong>[THIS PART]</strong>/edit</p>
-      </div>
-
-      <div class="form-group">
-        <label>Google Sheets API Key</label>
-        <input type="text" id="setup-api-key" placeholder="AIza..." class="input-field" style="width:100%">
-        <p style="font-size:12px;color:var(--text-light);margin-top:6px;">From Google Cloud Console → APIs & Services → Credentials</p>
-      </div>
-
-      <div class="form-group">
-        <label>School Name</label>
-        <input type="text" id="setup-school-name" placeholder="e.g. St. Mary's High School" class="input-field" style="width:100%">
-      </div>
-
-      <div id="setup-error" class="error-msg" style="display:none;margin-bottom:12px;"></div>
-
-      <button class="btn btn-primary" onclick="saveSetup()">Connect & Continue →</button>
-    </div>
-  </div>
-</div>
+<!-- Setup screen removed: configuration is now hardcoded in CONFIG -->
 
 <!-- ══════════════════════════════════════
      SCREEN: LANDING
@@ -1632,7 +1591,7 @@ let bookToRemove = null;
 
 // Genre → sub-genre map (loaded from sheet + defaults)
 const DEFAULT_GENRES = {
-  'Fiction': ['Historical Fiction', 'Mystery', 'Fantasy', 'Folktale', 'Science Fiction'],
+  'Fiction': ['Historical Fiction', 'Mystery', 'Fantasy', 'Folktale', 'Science Fiction', 'Religious Fiction'],
   'Non-Fiction': ['Biographies', 'Poetry']
 };
 
@@ -1643,24 +1602,7 @@ window.onload = () => {
   showScreen('landing');
 };
 
-function saveSetup() {
-  const url  = document.getElementById('setup-script-url').value.trim();
-  const name = document.getElementById('setup-school-name').value.trim();
-  const err  = document.getElementById('setup-error');
-
-  if (!url || !name) {
-    err.textContent = 'Please fill in all fields.';
-    err.style.display = 'block';
-    return;
-  }
-
-  CONFIG = { scriptUrl: url, schoolName: name };
-  localStorage.setItem('library_config', JSON.stringify(CONFIG));
-  err.style.display = 'none';
-  showScreen('landing');
-  document.getElementById('landing-school-name').textContent = name;
-  document.querySelectorAll('[id^="topbar-school"]').forEach(el => el.textContent = name);
-}
+// saveSetup removed — configuration hardcoded in CONFIG
 
 // ══════════════════════════════════════
 // SCREEN ROUTING
@@ -1750,63 +1692,52 @@ async function enterDashboard(role) {
 // All data goes through your Apps Script
 // Web App — no API key exposed.
 // ══════════════════════════════════════
-async function scriptGet(action) {
-  const url = `${CONFIG.scriptUrl}?action=${action}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('Backend error: ' + res.status);
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || 'Unknown error');
-  return json.data;
-}
-
-async function scriptPost(body) {
-  // Apps Script doesn't support CORS preflight, so we use text/plain
-  // which avoids the preflight check while still sending JSON in the body
-  const res = await fetch(CONFIG.scriptUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(body)
+// All requests go through GET to avoid CORS preflight issues with Apps Script.
+// Write operations pass their payload as a base64-encoded 'payload' parameter.
+async function scriptCall(params) {
+  const url = new URL(CONFIG.scriptUrl);
+  Object.entries(params).forEach(([k, v]) => {
+    url.searchParams.set(k, typeof v === 'object' ? JSON.stringify(v) : v);
   });
+  const res = await fetch(url.toString());
   if (!res.ok) throw new Error('Backend error: ' + res.status);
   const json = await res.json();
   if (!json.success) throw new Error(json.error || 'Unknown error');
   return json.data;
 }
 
-// Convenience wrappers that match the old API surface
+async function scriptGet(action) {
+  return scriptCall({ action });
+}
+
+// Write helpers — all use GET with action + params
 async function sheetsAppend(tab, row) {
-  // tab arg like 'Inventory!A:H' — extract tab name
   const tabName = tab.split('!')[0];
-  return scriptPost({ action: 'appendRow', tab: tabName, row });
+  return scriptCall({ action: 'appendRow', tab: tabName, row: JSON.stringify(row) });
 }
 
 async function sheetsUpdate(range, values) {
-  // range like 'Inventory!F5' — parse tab, row, col
   const tabName = range.split('!')[0];
   const cellRef = range.split('!')[1];
-  // If it's a full row range like A5:H5
   const rowMatch = cellRef.match(/[A-Z]+(\d+)/);
   const colMatch = cellRef.match(/^([A-Z]+)/);
   if (!rowMatch || !colMatch) throw new Error('Cannot parse range: ' + range);
   const rowIndex = parseInt(rowMatch[1]);
-  // If values is a single cell [[val]]
   if (values.length === 1 && values[0].length === 1) {
     const col = colToNum(colMatch[1]);
-    return scriptPost({ action: 'updateCell', tab: tabName, row: rowIndex, col, value: values[0][0] });
+    return scriptCall({ action: 'updateCell', tab: tabName, row: rowIndex, col, value: values[0][0] });
   }
-  // Otherwise it's a full row update
-  return scriptPost({ action: 'updateRow', tab: tabName, row: rowIndex, values: values[0] });
+  return scriptCall({ action: 'updateRow', tab: tabName, row: rowIndex, values: JSON.stringify(values[0]) });
 }
 
 async function sheetsDeleteRow(tabName, rowIndex) {
-  return scriptPost({ action: 'deleteRow', tab: tabName, row: rowIndex });
+  return scriptCall({ action: 'deleteRow', tab: tabName, row: rowIndex });
 }
 
 async function sheetsRewrite(tabName, rows) {
-  return scriptPost({ action: 'rewriteSheet', tab: tabName, rows });
+  return scriptCall({ action: 'rewriteSheet', tab: tabName, rows: JSON.stringify(rows) });
 }
 
-// Column letter → number helper (A=1, B=2, … Z=26, AA=27 …)
 function colToNum(col) {
   let n = 0;
   for (let i = 0; i < col.length; i++) {
