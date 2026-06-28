@@ -1852,8 +1852,12 @@ async function loadData() {
     }));
 
   } catch (e) {
-    showToast('Could not load data. Check your Apps Script URL.', 'error');
-    console.error(e);
+    // Log silently — a brief load error on login is non-critical
+    // Only show toast if data is completely empty after load attempt
+    console.error('Data load error:', e);
+    if (!inventoryCache.length && !genresCache.length) {
+      showToast('Could not connect. Please refresh the page.', 'error');
+    }
   }
 }
 
