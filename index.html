@@ -937,11 +937,28 @@
     .page-content { padding: 20px 16px; }
     .topbar { padding: 0 16px; }
     .topbar-nav { display: none; }
+    /* Tab bar — scroll horizontally instead of hiding on small screens */
+    .tab-bar {
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      flex-wrap: nowrap;
+      gap: 0;
+    }
+    .tab-bar::-webkit-scrollbar { display: none; }
+    .tab {
+      white-space: nowrap;
+      flex-shrink: 0;
+      font-size: 13px;
+      padding: 10px 14px;
+    }
   }
 
   @media (max-width: 600px) {
     .stats-grid { grid-template-columns: 1fr; }
     .modal { padding: 28px 20px; }
+    .tab { font-size: 12px; padding: 9px 12px; }
   }
 
   .hidden { display: none !important; }
@@ -1576,10 +1593,12 @@ let CONFIG = {
   schoolName: 'Santa Maria School'
 };
 
+// Passwords stored as SHA-256 hashes — change these when you update passwords.
+// To generate a new hash: https://emn178.github.io/online-tools/sha256.html
 const PASSWORDS = {
-  student: 'student123',
-  librarian: 'librarian123',
-  principal: 'principal123'
+  student:   '703b0a3d6ad75b649a28adde7d83c6251da457549263bc7ff45ec709b0a8448b',
+  librarian: 'ab8e89c55367f55a2f933b8dc8a9994d61f997df2b402274eb943fa22d77394a',
+  principal: '3549f22fb8622a6d216ef2dcd592e04ed1f1e604cef032d7e5c425e8e72a878e',
 };
 
 let currentRole = null;
@@ -1638,9 +1657,15 @@ function closeLogin() {
   currentRole = null;
 }
 
-function doLogin() {
+async function hashPassword(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin() {
   const pw = document.getElementById('login-password').value;
-  if (pw === PASSWORDS[currentRole]) {
+  const hashed = await hashPassword(pw);
+  if (hashed === PASSWORDS[currentRole]) {
     document.getElementById('login-modal').classList.remove('open');
     enterDashboard(currentRole);
   } else {
@@ -1653,6 +1678,9 @@ function logout() {
   currentRole = null;
   inventoryCache = [];
   checkoutsCache = [];
+  genresCache = [];
+  selectedCheckoutBook = null;
+  bookToRemove = null;
   showScreen('landing');
 }
 
@@ -1760,7 +1788,7 @@ async function loadData() {
       genre:     r.Genre     || '',
       subgenre:  r.SubGenre  || '',
       ageGroup:  r.AgeGroup  || '',
-      available: r.Available || 'Yes',
+      available: (r.Available === 'Yes' || r.Available === 'No') ? r.Available : 'Yes',
       condition: r.Condition || '',
       _rowIndex: r._rowIndex
     })).filter(r => r.bookId && r.bookId !== 'REMOVED');
@@ -1803,15 +1831,20 @@ function formatDate(d) {
 
 function formatDateShort(d) {
   if (!d) return '';
-  if (typeof d === 'string') d = new Date(d);
+  if (typeof d === 'string') {
+    const [y, mo, dy] = d.split('-').map(Number);
+    d = new Date(y, mo - 1, dy);
+  }
   return d.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function daysFromNow(dateStr) {
-  const due = new Date(dateStr);
+  // Parse as local date to avoid UTC timezone shift
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const due = new Date(y, m - 1, d);
   const now = new Date();
-  now.setHours(0,0,0,0);
-  due.setHours(0,0,0,0);
+  now.setHours(0, 0, 0, 0);
+  due.setHours(0, 0, 0, 0);
   return Math.ceil((due - now) / (1000 * 60 * 60 * 24));
 }
 
@@ -1840,6 +1873,12 @@ function genreChip(genre) {
   return `<span class="chip chip-${cls}">${genre}</span>`;
 }
 
+function sanitize(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
 function genreCode(subgenre) {
   return subgenre.substring(0, 3).toUpperCase();
 }
@@ -1850,10 +1889,13 @@ function genrePrefix(genre) {
 
 function generateBookId(genre, subgenre) {
   const prefix = `${genrePrefix(genre)}-${genreCode(subgenre)}`;
-  const existing = inventoryCache.filter(b => b.bookId.startsWith(prefix + '-'));
+  // Check both current inventory AND checkout history to avoid ID reuse
+  const inventoryIds = inventoryCache.filter(b => b.bookId.startsWith(prefix + '-'));
+  const checkoutIds  = checkoutsCache.filter(c => c.bookId.startsWith(prefix + '-'));
+  const allIds = [...inventoryIds.map(b => b.bookId), ...checkoutIds.map(c => c.bookId)];
   let max = 0;
-  existing.forEach(b => {
-    const parts = b.bookId.split('-');
+  allIds.forEach(id => {
+    const parts = id.split('-');
     const num = parseInt(parts[parts.length - 1]) || 0;
     if (num > max) max = num;
   });
@@ -1861,13 +1903,23 @@ function generateBookId(genre, subgenre) {
 }
 
 function todayISO() {
-  return new Date().toISOString().split('T')[0];
+  // Use local date parts to avoid UTC timezone shift
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function addDays(dateStr, days) {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().split('T')[0];
+  // Parse date parts directly to avoid UTC shift
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + days);
+  const yr = date.getFullYear();
+  const mo = String(date.getMonth() + 1).padStart(2, '0');
+  const dy = String(date.getDate()).padStart(2, '0');
+  return `${yr}-${mo}-${dy}`;
 }
 
 function genCheckoutId() {
@@ -1932,12 +1984,12 @@ function renderStudentTable() {
 
   tbody.innerHTML = books.map(b => `
     <tr>
-      <td><code style="font-size:12px;color:var(--text-mid);">${b.bookId}</code></td>
-      <td style="font-weight:500;">${b.title}</td>
-      <td>${b.author}</td>
+      <td><code style="font-size:12px;color:var(--text-mid);">${sanitize(b.bookId)}</code></td>
+      <td style="font-weight:500;">${sanitize(b.title)}</td>
+      <td>${sanitize(b.author)}</td>
       <td>${genreChip(b.genre)}</td>
-      <td>${b.subgenre}</td>
-      <td>${b.ageGroup || '—'}</td>
+      <td>${sanitize(b.subgenre)}</td>
+      <td>${sanitize(b.ageGroup || '—')}</td>
       <td>${b.available === 'Yes' ? '<span class="chip chip-available">Available</span>' : '<span class="chip chip-checked">Checked Out</span>'}</td>
     </tr>
   `).join('');
@@ -1980,8 +2032,8 @@ function updateLibDashboard() {
       overdueEl.innerHTML = overdue.map(c => `
         <div style="padding:10px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
           <div>
-            <div style="font-weight:500;font-size:14px;">${c.title}</div>
-            <div style="font-size:12px;color:var(--text-light);">Roll: ${c.rollNumber} · Due: ${formatDateShort(c.dueDate)}</div>
+            <div style="font-weight:500;font-size:14px;">${sanitize(c.title)}</div>
+            <div style="font-size:12px;color:var(--text-light);">Roll: ${sanitize(c.rollNumber)} · Due: ${formatDateShort(c.dueDate)}</div>
           </div>
           <span class="overdue-flag">⚠ ${Math.abs(daysFromNow(c.dueDate))}d late</span>
         </div>
@@ -2154,6 +2206,8 @@ async function markReturned(idx) {
 
     checkoutsCache[idx].returned = 'Yes';
     showToast(`✓ "${c.title}" marked as returned.`, 'success');
+    // Reload from sheet to ensure _rowIndex values are accurate for any subsequent operations
+    await loadData();
     renderRecordsTable();
     updateLibDashboard();
 
