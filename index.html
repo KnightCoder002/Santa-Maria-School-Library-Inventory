@@ -1,0 +1,4158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Library — Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet" />
+  </noscript>
+  <style>
+    :root {
+      --navy: #1a2744;
+      --navy-light: #243560;
+      --navy-deep: #111a30;
+      --gold: #c9a84c;
+      --gold-light: #e2c97a;
+      --parchment: #f7f3ec;
+      --parchment-dark: #ede8df;
+      --sage: #7a9e7e;
+      --crimson: #8b3a3a;
+      --crimson-light: #a84848;
+      --text-dark: #1a1a2e;
+      --text-mid: #4a4a6a;
+      --text-light: #8a8aaa;
+      --white: #ffffff;
+      --success: #3a7d55;
+      --warning: #c97c2a;
+      --danger: #8b3a3a;
+      --border: #ddd8ce;
+      --shadow: 0 4px 24px rgba(26, 39, 68, 0.10);
+      --shadow-lg: 0 8px 40px rgba(26, 39, 68, 0.16);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--parchment);
+      color: var(--text-dark);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── SCREENS ── */
+    .screen {
+      display: none;
+      min-height: 100vh;
+    }
+
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ══════════════════════════════════════
+     LANDING PAGE
+  ══════════════════════════════════════ */
+    #screen-landing {
+      background: var(--navy);
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #screen-landing::before {
+      content: '';
+      position: absolute;
+      top: -120px;
+      right: -120px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(201, 168, 76, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    #screen-landing::after {
+      content: '';
+      position: absolute;
+      bottom: -80px;
+      left: -80px;
+      width: 360px;
+      height: 360px;
+      background: radial-gradient(circle, rgba(122, 158, 126, 0.10) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .landing-inner {
+      width: 100%;
+      max-width: 960px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .landing-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .landing-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .logo-mark {
+      width: 52px;
+      height: 52px;
+      background: var(--gold);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .logo-text {
+      text-align: left;
+    }
+
+    .logo-text .school-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gold-light);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .logo-text .system-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    .landing-tagline {
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 14px;
+      letter-spacing: 0.5px;
+    }
+
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .role-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 16px;
+      padding: 40px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .role-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(201, 168, 76, 0.0) 0%, rgba(201, 168, 76, 0.06) 100%);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .role-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+    }
+
+    .role-card:hover::before {
+      opacity: 1;
+    }
+
+    .role-icon {
+      font-size: 42px;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .role-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      color: var(--white);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .role-desc {
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .role-badge {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .badge-student {
+      background: rgba(122, 158, 126, 0.2);
+      color: var(--sage);
+    }
+
+    .badge-librarian {
+      background: rgba(201, 168, 76, 0.2);
+      color: var(--gold-light);
+    }
+
+    .badge-principal {
+      background: rgba(139, 58, 58, 0.25);
+      color: #d47a7a;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 15, 30, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-lg);
+      animation: modalIn 0.2s ease;
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .modal-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .modal-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px;
+      color: var(--navy);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .modal-sub {
+      color: var(--text-light);
+      font-size: 13px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-mid);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      color: var(--text-dark);
+      background: var(--parchment);
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: var(--navy);
+      background: var(--white);
+    }
+
+    .error-msg {
+      color: var(--crimson);
+      font-size: 13px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--navy);
+      color: var(--white);
+      width: 100%;
+      padding: 14px;
+    }
+
+    .btn-primary:hover {
+      background: var(--navy-light);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-mid);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--navy);
+      color: var(--navy);
+    }
+
+    .btn-gold {
+      background: var(--gold);
+      color: var(--navy-deep);
+    }
+
+    .btn-gold:hover {
+      background: var(--gold-light);
+    }
+
+    .btn-danger {
+      background: var(--crimson);
+      color: var(--white);
+    }
+
+    .btn-danger:hover {
+      background: var(--crimson-light);
+    }
+
+    .btn-sm {
+      padding: 7px 14px;
+      font-size: 12px;
+    }
+
+    .modal-cancel {
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .modal-cancel button {
+      background: none;
+      border: none;
+      color: var(--text-light);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .modal-cancel button:hover {
+      color: var(--text-dark);
+    }
+
+    /* ══════════════════════════════════════
+     APP SHELL (all logged-in views)
+  ══════════════════════════════════════ */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: var(--navy);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .topbar-logo {
+      font-family: 'Playfair Display', serif;
+      color: var(--white);
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar-logo span {
+      color: var(--gold);
+    }
+
+    .topbar-divider {
+      width: 1px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .topbar-role {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    .role-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .dot-student {
+      background: var(--sage);
+    }
+
+    .dot-librarian {
+      background: var(--gold);
+    }
+
+    .dot-principal {
+      background: #d47a7a;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .topbar-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover,
+    .nav-btn.active {
+      color: var(--white);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-btn.active {
+      color: var(--gold-light);
+    }
+
+    .logout-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.7);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      padding: 7px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: rgba(139, 58, 58, 0.3);
+      border-color: rgba(139, 58, 58, 0.5);
+      color: #f0a0a0;
+    }
+
+    .page-content {
+      flex: 1;
+      padding: 32px;
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      margin-bottom: 28px;
+    }
+
+    .page-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      color: var(--navy);
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+      color: var(--text-light);
+      font-size: 14px;
+    }
+
+    /* ── TABS ── */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 28px;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-light);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: var(--navy);
+    }
+
+    .tab.active {
+      color: var(--navy);
+      border-bottom-color: var(--navy);
+      font-weight: 600;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px;
+      color: var(--navy);
+      font-weight: 600;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── STAT CARDS ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 22px 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin-bottom: 10px;
+    }
+
+    .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--navy);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat-sub {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+
+    .stat-card.warning .stat-value {
+      color: var(--warning);
+    }
+
+    .stat-card.danger .stat-value {
+      color: var(--crimson);
+    }
+
+    .stat-card.success .stat-value {
+      color: var(--success);
+    }
+
+    /* ── SEARCH & FILTER BAR ── */
+    .search-filter-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .search-wrap {
+      flex: 1;
+      min-width: 240px;
+      position: relative;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      padding: 11px 16px 11px 42px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--text-dark);
+      background: var(--white);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-wrap input:focus {
+      border-color: var(--navy);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      font-size: 16px;
+      pointer-events: none;
+    }
+
+    .filter-select {
+      padding: 11px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--text-dark);
+      background: var(--white);
+      outline: none;
+      cursor: pointer;
+      min-width: 160px;
+      transition: border-color 0.2s;
+    }
+
+    .filter-select:focus {
+      border-color: var(--navy);
+    }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      font-size: 14px;
+    }
+
+    thead {
+      background: var(--navy);
+    }
+
+    thead th {
+      padding: 13px 18px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.7);
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--parchment-dark);
+      transition: background 0.15s;
+    }
+
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: var(--parchment);
+    }
+
+    tbody td {
+      padding: 13px 18px;
+      color: var(--text-dark);
+      vertical-align: middle;
+    }
+
+    .empty-row td {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-light);
+      font-style: italic;
+    }
+
+    /* ── BADGES / CHIPS ── */
+    .chip {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .chip-fiction {
+      background: #e8f0fe;
+      color: #3558a8;
+    }
+
+    .chip-nonfiction {
+      background: #e8f5e9;
+      color: #2e7d45;
+    }
+
+    .chip-available {
+      background: #e8f5e9;
+      color: #2e7d45;
+    }
+
+    .chip-checked {
+      background: #fff3e0;
+      color: #b35c00;
+    }
+
+    .chip-overdue {
+      background: #fce8e8;
+      color: #8b3a3a;
+    }
+
+    .chip-returned {
+      background: #f3f3f3;
+      color: #666;
+    }
+
+    .chip-good {
+      background: #e8f5e9;
+      color: #2e7d45;
+    }
+
+    .chip-fair {
+      background: #fff8e1;
+      color: #b36a00;
+    }
+
+    .chip-poor {
+      background: #fff3e0;
+      color: #b35c00;
+    }
+
+    .chip-damaged {
+      background: #fce8e8;
+      color: #8b3a3a;
+    }
+
+    /* ── ALERTS ── */
+    .alert {
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .alert-warning {
+      background: #fff8ed;
+      border: 1px solid #f5d79e;
+      color: #7a4a00;
+    }
+
+    .alert-danger {
+      background: #fff0f0;
+      border: 1px solid #f5a0a0;
+      color: #6b2020;
+    }
+
+    .alert-success {
+      background: #f0faf3;
+      border: 1px solid #9dd4af;
+      color: #1e5c35;
+    }
+
+    /* ── FORMS / PANELS ── */
+    .panel {
+      background: var(--white);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--text-dark);
+      background: var(--parchment);
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .input-field:focus {
+      border-color: var(--navy);
+      background: var(--white);
+    }
+
+    .field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-mid);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+
+    .field-optional {
+      font-weight: 400;
+      color: var(--text-light);
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 11px;
+    }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      padding: 14px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      z-index: 9999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      max-width: 360px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    #toast.success {
+      background: var(--success);
+      color: var(--white);
+    }
+
+    #toast.error {
+      background: var(--crimson);
+      color: var(--white);
+    }
+
+    #toast.info {
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    /* ── LOADING ── */
+    .loading-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px;
+      gap: 16px;
+      color: var(--text-light);
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--navy);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── SUBGENRE MULTI-TAG ── */
+    .subgenre-picker {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .subgenre-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 32px;
+      padding: 6px 8px;
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+
+    .subgenre-tags:empty::before {
+      content: 'No sub-genres selected';
+      color: var(--text-light);
+      font-size: 12px;
+      align-self: center;
+    }
+
+    .sg-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--navy);
+      color: var(--white);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: default;
+    }
+
+    .sg-chip .sg-remove {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, .7);
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0 0 0 2px;
+    }
+
+    .sg-chip .sg-remove:hover {
+      color: var(--white);
+    }
+
+    .sg-add-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .sg-add-row select {
+      flex: 1;
+    }
+
+    /* Table display chips (compact) */
+    .sg-table-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      cursor: default;
+    }
+
+    .sg-tbl-chip {
+      display: inline-block;
+      background: var(--parchment-dark);
+      color: var(--navy);
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: help;
+    }
+
+    .sg-tbl-overflow {
+      display: inline-block;
+      background: var(--border);
+      color: var(--text-light);
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 11px;
+      cursor: help;
+    }
+
+    /* Google Books suggestion banner */
+    .gb-suggestion {
+      background: #eef6ff;
+      border: 1.5px solid #b3d4f5;
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .gb-suggestion .gb-label {
+      font-weight: 600;
+      color: #1a4a7a;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .gb-suggestion .gb-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .gb-sug-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #d0e8ff;
+      color: #1a4a7a;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+    }
+
+    .gb-sug-chip:hover {
+      border-color: #1a4a7a;
+    }
+
+    .gb-sug-chip.applied {
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    /* ── SKELETON LOADING ── */
+    @keyframes shimmer {
+      0% {
+        background-position: -600px 0;
+      }
+
+      100% {
+        background-position: 600px 0;
+      }
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--parchment-dark) 25%, #e8e3da 50%, var(--parchment-dark) 75%);
+      background-size: 600px 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .skeleton-row td {
+      padding: 12px 14px;
+    }
+
+    .skeleton-row td div {
+      height: 14px;
+    }
+
+    .skeleton-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .skeleton-card .sk-title {
+      height: 16px;
+      width: 40%;
+      margin-bottom: 16px;
+    }
+
+    .skeleton-card .sk-val {
+      height: 36px;
+      width: 60%;
+      margin-bottom: 8px;
+    }
+
+    .skeleton-card .sk-sub {
+      height: 12px;
+      width: 80%;
+    }
+
+    /* ── GENRE ANALYTICS ── */
+    .genre-bar-wrap {
+      margin-bottom: 10px;
+    }
+
+    .genre-bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--text-mid);
+      margin-bottom: 5px;
+    }
+
+    .genre-bar-track {
+      height: 8px;
+      background: var(--parchment-dark);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .genre-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--navy), var(--navy-light));
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+
+    /* ── GRID LAYOUTS ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .three-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+    }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      color: var(--navy);
+      font-weight: 600;
+    }
+
+    /* ── OVERDUE FLAG ── */
+    .overdue-flag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #fce8e8;
+      color: var(--crimson);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .due-soon-flag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #fff3e0;
+      color: var(--warning);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* ── CONFIG SETUP ── */
+    #screen-setup {
+      background: var(--parchment);
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .setup-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 48px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+    }
+
+    .setup-step {
+      display: none;
+    }
+
+    .setup-step.active {
+      display: block;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .role-grid {
+        grid-template-columns: 1fr;
+        max-width: 380px;
+        margin: 0 auto;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .two-col,
+      .three-col {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row,
+      .form-row-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .page-content {
+        padding: 20px 16px;
+      }
+
+      .topbar {
+        padding: 0 16px;
+      }
+
+      .topbar-nav {
+        display: none;
+      }
+
+      /* Tab bar — scroll horizontally instead of hiding on small screens */
+      .tab-bar {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        flex-wrap: nowrap;
+        gap: 0;
+      }
+
+      .tab-bar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .tab {
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-size: 13px;
+        padding: 10px 14px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .modal {
+        padding: 28px 20px;
+      }
+
+      .tab {
+        font-size: 12px;
+        padding: 9px 12px;
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 24px 0;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .mt-4 {
+      margin-top: 16px;
+    }
+
+    .mt-6 {
+      margin-top: 24px;
+    }
+
+    .mb-4 {
+      margin-bottom: 16px;
+    }
+
+    .gap-2 {
+      gap: 8px;
+    }
+
+    .flex {
+      display: flex;
+    }
+
+    .items-center {
+      align-items: center;
+    }
+
+    .justify-between {
+      justify-content: space-between;
+    }
+
+    .flex-wrap {
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Setup screen removed: configuration is now hardcoded in CONFIG -->
+
+  <!-- ══════════════════════════════════════
+     SCREEN: LANDING
+══════════════════════════════════════ -->
+  <div class="screen" id="screen-landing">
+    <div class="landing-inner">
+      <div class="landing-header">
+        <div class="landing-logo">
+          <img src="assets/logo.png" style="height:60px;width:auto;" alt="Santa Maria School" />
+          <div class="logo-text">
+            <div class="school-name" id="landing-school-name">Santa Maria Matriculation Higher Secondary School</div>
+            <div class="system-name">Library Management System</div>
+          </div>
+        </div>
+        <p class="landing-tagline">Select your role to continue</p>
+      </div>
+
+      <div class="role-grid">
+        <div class="role-card" onclick="openLogin('student')" onmouseenter="prefetchData()">
+          <span class="role-icon">🎒</span>
+          <div class="role-title">Student/Teacher</div>
+          <p class="role-desc">Browse the library catalogue, search for books, and check availability.</p>
+          <span class="role-badge badge-student">View Access</span>
+        </div>
+
+        <div class="role-card" onclick="openLogin('librarian')" onmouseenter="prefetchData()">
+          <span class="role-icon">📖</span>
+          <div class="role-title">Librarian</div>
+          <p class="role-desc">Manage checkouts, track due dates, and view overdue books.</p>
+          <span class="role-badge badge-librarian">Checkout Access</span>
+        </div>
+
+        <div class="role-card" onclick="openLogin('principal')" onmouseenter="prefetchData()">
+          <span class="role-icon">🏛️</span>
+          <div class="role-title">Principal/Director</div>
+          <p class="role-desc">Full access — manage inventory, view analytics, and oversee all activity.</p>
+          <span class="role-badge badge-principal">Full Access</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+     MODAL: LOGIN
+══════════════════════════════════════ -->
+  <div class="modal-overlay" id="login-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-icon" id="modal-icon">📖</div>
+        <div class="modal-title" id="modal-title">Librarian Login</div>
+        <div class="modal-sub" id="modal-sub">Enter your password to continue</div>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Enter password"
+          onkeydown="if(event.key==='Enter')doLogin()">
+        <div class="error-msg" id="login-error">Incorrect password. Please try again.</div>
+      </div>
+      <button class="btn btn-primary" id="login-submit-btn" onclick="doLogin()">Sign In</button>
+      <div class="modal-cancel"><button onclick="closeLogin()">← Back to role selection</button></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+     SCREEN: STUDENT
+══════════════════════════════════════ -->
+  <!-- screen-student rendered lazily by JS on login -->
+  <div id="screens-container"><!-- non-landing screens injected here on first login --></div>
+  <!-- screen-librarian rendered lazily by JS on login -->
+  <!-- screen-principal rendered lazily by JS on login -->
+
+  <!-- ══════════════════════════════════════
+     MODAL: CONFIRM REMOVE BOOK
+══════════════════════════════════════ -->
+  <div class="modal-overlay" id="remove-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-icon">⚠️</div>
+        <div class="modal-title">Remove Book</div>
+        <div class="modal-sub" id="remove-modal-sub">This will permanently remove the book from the catalogue.</div>
+      </div>
+      <div id="remove-book-info"
+        style="background:var(--parchment);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;font-size:14px;color:var(--text-mid);">
+      </div>
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeRemoveModal()">Cancel</button>
+        <button class="btn btn-danger" id="confirm-remove-btn" style="flex:1;" onclick="confirmRemove()">Remove
+          Book</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+     MODAL: BOOK CHECKOUT HISTORY
+══════════════════════════════════════ -->
+  <div class="modal-overlay" id="history-modal">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <div class="modal-icon">📖</div>
+        <div class="modal-title" id="history-modal-title">Checkout History</div>
+        <div class="modal-sub" id="history-modal-sub"></div>
+      </div>
+      <div id="history-modal-body" style="max-height:360px;overflow-y:auto;margin-bottom:20px;"></div>
+      <button class="btn btn-secondary" style="width:100%;" onclick="closeHistoryModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+     MODAL: EDIT BOOK DETAILS
+══════════════════════════════════════ -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <div class="modal-icon">✏️</div>
+        <div class="modal-title">Edit Book Details</div>
+        <div class="modal-sub" id="edit-modal-sub"></div>
+      </div>
+
+      <div class="form-row" style="margin-bottom:16px;">
+        <div>
+          <label class="field-label">Title</label>
+          <input type="text" id="edit-title" class="input-field">
+        </div>
+        <div>
+          <label class="field-label">Author</label>
+          <input type="text" id="edit-author" class="input-field">
+        </div>
+      </div>
+
+      <div class="form-row" style="margin-bottom:8px;">
+        <div>
+          <label class="field-label">Genre</label>
+          <select id="edit-genre" class="input-field" onchange="populateAddSubgenreDropdown('edit')">
+            <option value="Fiction">Fiction</option>
+            <option value="Non-Fiction">Non-Fiction</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Sub-genres <span class="field-optional">pick one or more</span></label>
+          <div class="subgenre-picker" id="edit-sg-picker">
+            <div class="subgenre-tags" id="edit-sg-tags"></div>
+            <div class="sg-add-row">
+              <select id="edit-sg-dropdown" class="input-field" style="font-size:13px;">
+                <option value="">Select genre first…</option>
+              </select>
+              <button type="button" class="btn btn-outline btn-sm" onclick="addSubgenreChip('edit')">+ Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Google Books suggestion banner (edit modal) -->
+      <div id="edit-gb-banner" class="gb-suggestion hidden" style="margin-bottom:12px;"></div>
+      <div style="margin-bottom:16px;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="fetchGoogleBooks('edit')" style="font-size:12px;">
+          🔍 Re-fetch genre suggestions from Google Books
+        </button>
+      </div>
+
+      <div class="form-row-3" style="margin-bottom:16px;">
+        <div>
+          <label class="field-label">Age Group <span class="field-optional">optional</span></label>
+          <select id="edit-age" class="input-field">
+            <option value="">Not specified</option>
+            <option value="Junior (Gr. 1–5)">Junior (Gr. 1–5)</option>
+            <option value="Middle (Gr. 6–8)">Middle (Gr. 6–8)</option>
+            <option value="Senior (Gr. 9–12)">Senior (Gr. 9–12)</option>
+            <option value="All Ages">All Ages</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Condition <span class="field-optional">optional</span></label>
+          <select id="edit-condition" class="input-field">
+            <option value="">Not noted</option>
+            <option value="Good">Good</option>
+            <option value="Fair">Fair</option>
+            <option value="Poor">Poor</option>
+            <option value="Damaged">Damaged</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Language <span class="field-optional">optional</span></label>
+          <select id="edit-language" class="input-field">
+            <option value="English">English</option>
+            <option value="Tamil">Tamil</option>
+            <option value="Hindi">Hindi</option>
+          </select>
+        </div>
+      </div>
+
+      <div
+        style="background:var(--parchment);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;font-size:12px;color:var(--text-mid);">
+        📌 Book ID (<strong id="edit-bookid-display"></strong>) stays the same — editing genre or sub-genre here will
+        not regenerate the ID.
+      </div>
+
+      <div id="edit-error" class="alert alert-danger hidden"></div>
+
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeEditModal()">Cancel</button>
+        <button class="btn btn-gold" id="confirm-edit-btn" style="flex:1;" onclick="confirmEditBook()">Save
+          Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <script>
+    // ══════════════════════════════════════
+    // UTILITIES
+    // ══════════════════════════════════════
+    // Returns a version of fn that only fires after `wait` ms of inactivity.
+    // Used for text search inputs so a full table re-render isn't triggered on
+    // every individual keystroke.
+    function debounce(fn, wait) {
+      let timer;
+      return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn.apply(this, args), wait);
+      };
+    }
+
+    // Debounced versions of the five render functions driven by text inputs.
+    // Select/onchange handlers are left instant since the user triggers those
+    // deliberately (one event per interaction, no keystroke-per-character noise).
+    const renderStudentTableDebounced = debounce(() => renderStudentTable(), 175);
+    const renderCheckoutBookListDebounced = debounce(() => renderCheckoutBookList(), 175);
+    const renderRecordsTableDebounced = debounce(() => renderRecordsTable(), 175);
+    const renderLibCatalogueTableDebounced = debounce(() => renderLibCatalogueTable(), 175);
+    const renderPrinInventoryDebounced = debounce(() => renderPrinInventory(), 175);
+    const renderPrinCheckoutsDebounced = debounce(() => renderPrinCheckouts(), 175);
+
+    // ══════════════════════════════════════
+    // CONFIG & STATE
+    // ══════════════════════════════════════
+    let CONFIG = {
+      scriptUrl: 'https://script.google.com/macros/s/AKfycbyD-39FPy1YwHv0DS97ijuOpEXgUndNHcB2ftPPLdtfonUoBuHiqeil8TiNmTmlex03GA/exec',   // ← paste your Web App URL here
+      schoolName: 'Santa Maria School'
+    };
+
+    // Session token issued by the backend after a successful login.
+    // Held only in memory (never localStorage) so it disappears on refresh/close.
+    let sessionToken = null;
+    let lastFetchedAt = 0; // ms timestamp of the last successful loadData() call
+
+    let currentRole = null;
+    let inventoryCache = [];
+    let checkoutsCache = [];
+    let genresCache = [];
+    let selectedCheckoutBook = null;
+    let bookToRemove = null;
+    let editingBookId = null;
+
+    // Genre → sub-genre map (loaded from sheet + defaults)
+    const DEFAULT_GENRES = {
+      'Fiction': ['Historical Fiction', 'Mystery', 'Fantasy', 'Folktale', 'Science Fiction', 'Religious Fiction'],
+      'Non-Fiction': ['Biographies', 'Poetry']
+    };
+
+    // ══════════════════════════════════════
+    // INIT
+    // ══════════════════════════════════════
+    // ════════════════════════════════════════════════════════
+    // LAZY SCREEN TEMPLATES
+    // Screens are not in the DOM at page load. They are injected
+    // once when the user first logs in to that role, then kept
+    // for the session. This reduces initial DOM parse cost by ~80%.
+    // ════════════════════════════════════════════════════════
+    const SCREEN_TEMPLATES = {};
+
+    SCREEN_TEMPLATES['student'] = `
+<div class="screen" id="screen-student">
+  <div class="app-shell">
+    <nav class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-logo"><img src="assets/logo.png" style="height:32px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo" loading="lazy"/><span id="topbar-school-student">Santa Maria School</span></div>
+        <div class="topbar-divider"></div>
+        <div class="topbar-role"><span class="role-dot dot-student"></span> Student/Teacher</div>
+      </div>
+      <div class="topbar-right">
+        <button class="logout-btn" onclick="logout()">Sign Out</button>
+      </div>
+    </nav>
+
+    <div class="page-content">
+      <div class="page-header">
+        <h1 class="page-title">Library Catalogue</h1>
+        <p class="page-subtitle">Browse and search all available books</p>
+      </div>
+
+      <div class="search-filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="student-search" placeholder="Search by title or author..." oninput="renderStudentTableDebounced()">
+        </div>
+        <select class="filter-select" id="student-genre-filter" onchange="updateStudentSubgenreFilter()">
+          <option value="">All Genres</option>
+          <option value="Fiction">Fiction</option>
+          <option value="Non-Fiction">Non-Fiction</option>
+        </select>
+        <select class="filter-select" id="student-subgenre-filter" onchange="renderStudentTable()">
+          <option value="">All Sub-genres</option>
+        </select>
+        <select class="filter-select" id="student-age-filter" onchange="renderStudentTable()">
+          <option value="">All Age Groups</option>
+          <option value="Junior (Gr. 1–5)">Junior (Gr. 1–5)</option>
+          <option value="Middle (Gr. 6–8)">Middle (Gr. 6–8)</option>
+          <option value="Senior (Gr. 9–12)">Senior (Gr. 9–12)</option>
+          <option value="All Ages">All Ages</option>
+        </select>
+        <select class="filter-select" id="student-language-filter" onchange="renderStudentTable()">
+          <option value="">All Languages</option>
+          <option value="English">English</option>
+          <option value="Tamil">Tamil</option>
+          <option value="Hindi">Hindi</option>
+        </select>
+        <select class="filter-select" id="student-avail-filter" onchange="renderStudentTable()">
+          <option value="">All Availability</option>
+          <option value="Yes">Available</option>
+          <option value="No">Checked Out</option>
+        </select>
+      </div>
+
+      <div id="student-loading">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Book ID</th><th>Title</th><th>Author</th><th>Genre</th><th>Sub-genre</th><th>Age Group</th><th>Language</th><th>Availability</th></tr>
+            </thead>
+            <tbody id="student-skeleton-tbody">
+              <!-- populated by showStudentSkeleton() -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="student-table-wrap" class="table-wrap hidden">
+        <table id="student-table">
+          <thead>
+            <tr>
+              <th>Book ID</th>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Genre</th>
+              <th>Sub-genre</th>
+              <th>Age Group</th>
+              <th>Language</th>
+              <th>Availability</th>
+            </tr>
+          </thead>
+          <tbody id="student-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: LIBRARIAN
+══════════════════════════════════════ -->
+`;
+
+    SCREEN_TEMPLATES['librarian'] = `
+<div class="screen" id="screen-librarian">
+  <div class="app-shell">
+    <nav class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-logo"><img src="assets/logo.png" style="height:32px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo" loading="lazy"/><span id="topbar-school-librarian">Santa Maria School</span></div>
+        <div class="topbar-divider"></div>
+        <div class="topbar-role"><span class="role-dot dot-librarian"></span> Librarian</div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-nav">
+          <button class="nav-btn active" onclick="libTab('dashboard')" id="lib-tab-dashboard">Dashboard</button>
+          <button class="nav-btn" onclick="libTab('checkout')" id="lib-tab-checkout">Check Out</button>
+          <button class="nav-btn" onclick="libTab('records')" id="lib-tab-records">Records</button>
+          <button class="nav-btn" onclick="libTab('catalogue')" id="lib-tab-catalogue">Catalogue</button>
+          <button class="nav-btn" onclick="libTab('addbook')" id="lib-tab-addbook">Add Book</button>
+        </div>
+        <button class="logout-btn" onclick="logout()">Sign Out</button>
+      </div>
+    </nav>
+
+    <div class="page-content">
+
+      <!-- Dashboard -->
+      <div id="lib-dashboard">
+        <div class="page-header">
+          <h1 class="page-title">Librarian Dashboard</h1>
+          <p class="page-subtitle" id="lib-date-display"></p>
+        </div>
+        <div class="stats-grid" id="lib-stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Books</div>
+            <div class="stat-value" id="lib-stat-total">—</div>
+            <div class="stat-sub">in catalogue</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Checked Out</div>
+            <div class="stat-value" id="lib-stat-checked">—</div>
+            <div class="stat-sub">currently with students</div>
+          </div>
+          <div class="stat-card warning">
+            <div class="stat-label">Due Soon</div>
+            <div class="stat-value" id="lib-stat-due-soon">—</div>
+            <div class="stat-sub">within 3 days</div>
+          </div>
+          <div class="stat-card danger">
+            <div class="stat-label">Overdue</div>
+            <div class="stat-value" id="lib-stat-overdue">—</div>
+            <div class="stat-sub">past due date</div>
+          </div>
+        </div>
+
+        <div id="lib-overdue-alert"></div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">🔴 Overdue Books</div>
+            <div id="lib-overdue-list"><div class="loading-wrap" style="padding:24px;"><div class="spinner"></div></div></div>
+          </div>
+          <div class="card">
+            <div class="card-title">🕐 Due Within 3 Days</div>
+            <div id="lib-duesoon-list"><div class="loading-wrap" style="padding:24px;"><div class="spinner"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Check Out -->
+      <div id="lib-checkout" class="hidden">
+        <div class="page-header">
+          <h1 class="page-title">Check Out a Book</h1>
+          <p class="page-subtitle">Enter the student's roll number and select the book being checked out</p>
+        </div>
+
+        <div class="panel">
+          <div class="card-title" style="margin-bottom:24px;">📋 New Checkout</div>
+          <div class="form-row" style="margin-bottom:16px;">
+            <div>
+              <label class="field-label">Student/Teacher Roll Number</label>
+              <input type="text" id="checkout-roll" class="input-field" placeholder="e.g. 1371">
+            </div>
+            <div>
+              <label class="field-label">Loan Duration <span class="field-optional">(days)</span></label>
+              <input type="number" id="checkout-days" class="input-field" value="14" min="1" max="90">
+            </div>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label class="field-label">Search Book to Check Out</label>
+            <div class="search-wrap" style="margin-bottom:12px;">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="checkout-book-search" class="input-field" style="padding-left:42px;" placeholder="Type title or author…" oninput="renderCheckoutBookListDebounced()">
+            </div>
+            <div id="checkout-book-list" class="table-wrap" style="max-height:280px;overflow-y:auto;display:none;">
+              <table>
+                <thead><tr><th>Book ID</th><th>Title</th><th>Author</th><th>Sub-genre</th><th>Status</th><th></th></tr></thead>
+                <tbody id="checkout-book-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="checkout-selected-book" class="hidden" style="background:var(--parchment);border-radius:var(--radius-sm);padding:16px;margin-bottom:16px;border:1.5px solid var(--gold);">
+            <div style="font-size:12px;font-weight:600;color:var(--text-light);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Selected Book</div>
+            <div id="checkout-selected-title" style="font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);font-weight:600;"></div>
+            <div id="checkout-selected-meta" style="font-size:13px;color:var(--text-mid);margin-top:4px;"></div>
+          </div>
+
+          <div id="checkout-error" class="alert alert-danger hidden"></div>
+
+          <button class="btn btn-gold" id="checkout-submit-btn" onclick="submitCheckout()" style="margin-top:8px;">✓ Confirm Checkout</button>
+        </div>
+      </div>
+
+      <!-- Records -->
+      <div id="lib-records" class="hidden">
+        <div class="page-header">
+          <h1 class="page-title">Checkout Records</h1>
+          <p class="page-subtitle">All current and past borrowing activity</p>
+        </div>
+
+        <div class="search-filter-bar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="records-search" placeholder="Search by roll number or title…" oninput="renderRecordsTableDebounced()">
+          </div>
+          <select class="filter-select" id="records-status-filter" onchange="renderRecordsTable()">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="overdue">Overdue</option>
+            <option value="returned">Returned</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Roll No.</th>
+                <th>Book</th>
+                <th>Book ID</th>
+                <th>Checked Out</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="records-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Catalogue (read for librarian) -->
+      <div id="lib-catalogue" class="hidden">
+        <div class="page-header">
+          <h1 class="page-title">Book Catalogue</h1>
+          <p class="page-subtitle">Full library inventory — view only</p>
+        </div>
+        <div class="search-filter-bar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="lib-cat-search" placeholder="Search by title or author…" oninput="renderLibCatalogueTableDebounced()">
+          </div>
+          <select class="filter-select" id="lib-cat-genre" onchange="updateLibCatSubgenre()">
+            <option value="">All Genres</option>
+            <option value="Fiction">Fiction</option>
+            <option value="Non-Fiction">Non-Fiction</option>
+          </select>
+          <select class="filter-select" id="lib-cat-subgenre" onchange="renderLibCatalogueTable()">
+            <option value="">All Sub-genres</option>
+          </select>
+          <select class="filter-select" id="lib-cat-language" onchange="renderLibCatalogueTable()">
+            <option value="">All Languages</option>
+            <option value="English">English</option>
+            <option value="Tamil">Tamil</option>
+            <option value="Hindi">Hindi</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Book ID</th><th>Title</th><th>Author</th><th>Genre</th><th>Sub-genre</th><th>Age Group</th><th>Language</th><th>Condition</th><th>Available</th><th>History</th></tr>
+            </thead>
+            <tbody id="lib-cat-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Add Book (shared panel, lib context) -->
+      <div id="lib-addbook" class="hidden">
+        <div class="page-header">
+          <h1 class="page-title">Add New Book</h1>
+          <p class="page-subtitle">Enter the book's details — the Book ID will be generated automatically</p>
+        </div>
+
+        <div class="panel">
+          <div class="form-row" style="margin-bottom:16px;">
+            <div>
+              <label class="field-label">Title</label>
+              <input type="text" id="lib-ab-title" class="input-field" placeholder="e.g. The Oath" oninput="debounceGoogleBooks('lib-ab')">
+            </div>
+            <div>
+              <label class="field-label">Author</label>
+              <input type="text" id="lib-ab-author" class="input-field" placeholder="e.g. Frank Peretti" oninput="debounceGoogleBooks('lib-ab')">
+            </div>
+          </div>
+
+          <div class="form-row" style="margin-bottom:8px;">
+            <div>
+              <label class="field-label">Genre</label>
+              <select id="lib-ab-genre" class="input-field" onchange="populateAddSubgenreDropdown('lib-ab')">
+                <option value="">Select genre…</option>
+                <option value="Fiction">Fiction</option>
+                <option value="Non-Fiction">Non-Fiction</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Sub-genres <span class="field-optional">pick one or more</span></label>
+              <div class="subgenre-picker" id="lib-ab-sg-picker">
+                <div class="subgenre-tags" id="lib-ab-sg-tags"></div>
+                <div class="sg-add-row">
+                  <select id="lib-ab-sg-dropdown" class="input-field" style="font-size:13px;">
+                    <option value="">Select genre first…</option>
+                  </select>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="addSubgenreChip('lib-ab')">+ Add</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Google Books suggestion banner (lib-ab) -->
+          <div id="lib-ab-gb-banner" class="gb-suggestion hidden" style="margin-bottom:12px;"></div>
+
+          <div class="form-row-3" style="margin-bottom:16px;">
+            <div>
+              <label class="field-label">Age Group <span class="field-optional">optional</span></label>
+              <select id="lib-ab-age" class="input-field">
+                <option value="">Not specified</option>
+                <option value="Junior (Gr. 1–5)">Junior (Gr. 1–5)</option>
+                <option value="Middle (Gr. 6–8)">Middle (Gr. 6–8)</option>
+                <option value="Senior (Gr. 9–12)">Senior (Gr. 9–12)</option>
+                <option value="All Ages">All Ages</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Condition <span class="field-optional">optional</span></label>
+              <select id="lib-ab-condition" class="input-field">
+                <option value="">Not noted</option>
+                <option value="Good">Good</option>
+                <option value="Fair">Fair</option>
+                <option value="Poor">Poor</option>
+                <option value="Damaged">Damaged</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Language <span class="field-optional">optional</span></label>
+              <select id="lib-ab-language" class="input-field">
+                <option value="English" selected>English</option>
+                <option value="Tamil">Tamil</option>
+                <option value="Hindi">Hindi</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="background:var(--parchment);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;font-size:13px;color:var(--text-mid);">
+            📌 Book ID will be auto-generated based on the selected genre and sub-genre (e.g. <strong>FIC-MYS-001</strong>)
+          </div>
+
+          <div id="lib-ab-book-error" class="alert alert-danger hidden"></div>
+
+          <button class="btn btn-gold" id="lib-ab-submit-btn" onclick="submitAddBook('lib-ab')">+ Add to Catalogue</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: PRINCIPAL
+══════════════════════════════════════ -->
+`;
+
+    SCREEN_TEMPLATES['principal'] = `
+<div class="screen" id="screen-principal">
+  <div class="app-shell">
+    <nav class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-logo"><img src="assets/logo.png" style="height:32px;width:auto;vertical-align:middle;margin-right:8px;" alt="logo" loading="lazy"/><span id="topbar-school-principal">Santa Maria School</span></div>
+        <div class="topbar-divider"></div>
+        <div class="topbar-role"><span class="role-dot dot-principal"></span> Principal/Director</div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-nav">
+          <button class="nav-btn active" onclick="prinTab('dashboard')" id="prin-tab-dashboard">Dashboard</button>
+          <button class="nav-btn" onclick="prinTab('inventory')" id="prin-tab-inventory">Inventory</button>
+          <button class="nav-btn" onclick="prinTab('add-book')" id="prin-tab-add-book">Add Book</button>
+          <button class="nav-btn" onclick="prinTab('checkouts')" id="prin-tab-checkouts">Checkouts</button>
+          <button class="nav-btn" onclick="prinTab('analytics')" id="prin-tab-analytics">Analytics</button>
+          <button class="nav-btn" onclick="prinTab('genres')" id="prin-tab-genres">Genres</button>
+        </div>
+        <button class="logout-btn" onclick="logout()">Sign Out</button>
+      </div>
+    </nav>
+
+    <div class="page-content">
+
+      <!-- Dashboard -->
+      <div id="prin-dashboard">
+        <div class="page-header">
+          <h1 class="page-title">Principal/Director's Overview</h1>
+          <p class="page-subtitle" id="prin-date-display"></p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Books</div>
+            <div class="stat-value" id="prin-stat-total">—</div>
+            <div class="stat-sub">in catalogue</div>
+          </div>
+          <div class="stat-card success">
+            <div class="stat-label">Available</div>
+            <div class="stat-value" id="prin-stat-available">—</div>
+            <div class="stat-sub">on shelves now</div>
+          </div>
+          <div class="stat-card warning">
+            <div class="stat-label">Checked Out</div>
+            <div class="stat-value" id="prin-stat-checked">—</div>
+            <div class="stat-sub">with students</div>
+          </div>
+          <div class="stat-card danger">
+            <div class="stat-label">Overdue</div>
+            <div class="stat-value" id="prin-stat-overdue">—</div>
+            <div class="stat-sub">past due date</div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">📚 Inventory by Genre</div>
+            <div id="prin-genre-bars"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">🔴 Overdue Summary</div>
+            <div id="prin-overdue-summary"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventory Management -->
+      <div id="prin-inventory" class="hidden">
+        <div class="page-header">
+          <h1 class="page-title">Inventory Management</h1>
+          <p class="page-subtitle">View, edit, and remove books from the catalogue</p>
+        </div>
+        <div class="search-filter-bar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="prin-inv-search" placeholder="Search title or author…" oninput="renderPrinInventoryDebounced()">
+          </div>
+          <select class="filter-select" id="prin-inv-genre" onchange="updatePrinInvSubgenre()">
+            <option value="">All Genres</option>
+            <option value="Fiction">Fiction</option>
+            <option value="Non-Fiction">Non-Fiction</option>
+          </select>
+          <select class="filter-select" id="prin-inv-subgenre" onchange="renderPrinInventory()">
+            <option value="">All Sub-genres</option>
+          </select>
+          <select class="filter-select" id="prin-inv-language" onchange="renderPrinInventory()">
+            <option value="">All Languages</option>
+            <option value="English">English</option>
+            <option value="Tamil">Tamil</option>
+            <option value="Hindi">Hindi</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Book ID</th><th>Title</th><th>Author</th><th>Sub-genre</th><th>Age Group</th><th>Language</th><th>Condition</th><th>Available</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="prin-inv-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Add Book -->
+      <div id="prin-add-book" class="hidden">
+        <div class="page-header">
+          <h1 class="page-title">Add New Book</h1>
+          <p class="page-subtitle">Enter the book's details — the Book ID will be generated automatically</p>
+        </div>
+
+        <div class="panel">
+          <div class="form-row" style="margin-bottom:16px;">
+            <div>
+              <label class="field-label">Title</label>
+              <input type="text" id="add-title" class="input-field" placeholder="e.g. The Oath" oninput="debounceGoogleBooks('add')">
+            </div>
+            <div>
+              <label class="field-label">Author</label>
+              <input type="text" id="add-author" class="input-field" placeholder="e.g. Frank Peretti" oninput="debounceGoogleBooks('add')">
+            </div>
+          </div>
+
+          <div class="form-row" style="margin-bottom:8px;">
+            <div>
+              <label class="field-label">Genre</label>
+              <select id="add-genre" class="input-field" onchange="populateAddSubgenreDropdown('add')">
+                <option value="">Select genre…</option>
+                <option value="Fiction">Fiction</option>
+                <option value="Non-Fiction">Non-Fiction</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Sub-genres <span class="field-optional">pick one or more</span></label>
+              <div class="subgenre-picker" id="add-sg-picker">
+                <div class="subgenre-tags" id="add-sg-tags"></div>
+                <div class="sg-add-row">
+                  <select id="add-sg-dropdown" class="input-field" style="font-size:13px;">
+                    <option value="">Select genre first…</option>
+                  </select>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="addSubgenreChip('add')">+ Add</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Google Books suggestion banner (add) -->
+          <div id="add-gb-banner" class="gb-suggestion hidden" style="margin-bottom:12px;"></div>
+
+          <div class="form-row-3" style="margin-bottom:16px;">
+            <div>
+              <label class="field-label">Age Group <span class="field-optional">optional</span></label>
+              <select id="add-age" class="input-field">
+                <option value="">Not specified</option>
+                <option value="Junior (Gr. 1–5)">Junior (Gr. 1–5)</option>
+                <option value="Middle (Gr. 6–8)">Middle (Gr. 6–8)</option>
+                <option value="Senior (Gr. 9–12)">Senior (Gr. 9–12)</option>
+                <option value="All Ages">All Ages</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Condition <span class="field-optional">optional</span></label>
+              <select id="add-condition" class="input-field">
+                <option value="">Not noted</option>
+                <option value="Good">Good</option>
+                <option value="Fair">Fair</option>
+                <option value="Poor">Poor</option>
+                <option value="Damaged">Damaged</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">Language <span class="field-optional">optional</span></label>
+              <select id="add-language" class="input-field">
+                <option value="English" selected>English</option>
+                <option value="Tamil">Tamil</option>
+                <option value="Hindi">Hindi</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="background:var(--parchment);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;font-size:13px;color:var(--text-mid);">
+            📌 Book ID will be auto-generated based on the selected genre and sub-genre (e.g. <strong>FIC-MYS-001</strong>)
+          </div>
+
+          <div id="add-book-error" class="alert alert-danger hidden"></div>
+
+          <button class="btn btn-gold" id="add-submit-btn" onclick="submitAddBook()">+ Add to Catalogue</button>
+        </div>
+      </div>
+
+      <!-- Checkout Records -->
+      <div id="prin-checkouts" class="hidden">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1 class="page-title">Checkout Records</h1>
+            <p class="page-subtitle">All borrowing activity across all students</p>
+          </div>
+          <button class="btn btn-outline" onclick="exportCheckoutsCSV()">⬇ Export to CSV</button>
+        </div>
+        <div class="search-filter-bar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="prin-co-search" placeholder="Search roll number or title…" oninput="renderPrinCheckoutsDebounced()">
+          </div>
+          <select class="filter-select" id="prin-co-status" onchange="renderPrinCheckouts()">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="overdue">Overdue</option>
+            <option value="returned">Returned</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Roll No.</th><th>Book</th><th>Book ID</th><th>Checked Out</th><th>Due Date</th><th>Status</th></tr>
+            </thead>
+            <tbody id="prin-co-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Analytics -->
+      <div id="prin-analytics" class="hidden">
+        <div class="page-header">
+          <h1 class="page-title">Library Analytics</h1>
+          <p class="page-subtitle">Usage patterns and borrowing statistics</p>
+        </div>
+
+        <div class="two-col" style="margin-bottom:24px;">
+          <div class="card">
+            <div class="card-title">📊 Checkouts by Genre</div>
+            <div id="analytics-genre-bars"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">🏆 Most Borrowed Books</div>
+            <div id="analytics-top-books"></div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">👤 Most Active Student/Teachers</div>
+            <div id="analytics-top-students"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">📅 Monthly Checkout Trend</div>
+            <div id="analytics-monthly"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Genre Management -->
+      <div id="prin-genres" class="hidden">
+        <div class="page-header">
+          <h1 class="page-title">Genre Management</h1>
+          <p class="page-subtitle">Add new genres and sub-genres to the system</p>
+        </div>
+
+        <div class="two-col">
+          <div class="panel" style="margin-bottom:0;">
+            <div class="card-title" style="margin-bottom:20px;">+ Add New Sub-genre</div>
+            <div style="margin-bottom:16px;">
+              <label class="field-label">Parent Genre</label>
+              <select id="genre-parent" class="input-field">
+                <option value="Fiction">Fiction</option>
+                <option value="Non-Fiction">Non-Fiction</option>
+              </select>
+            </div>
+            <div style="margin-bottom:16px;">
+              <label class="field-label">Sub-genre Name</label>
+              <input type="text" id="genre-new-name" class="input-field" placeholder="e.g. Thriller">
+            </div>
+            <button class="btn btn-gold" id="add-genre-btn" onclick="addGenre()">Add Sub-genre</button>
+          </div>
+
+          <div class="card" style="box-shadow:var(--shadow);">
+            <div class="card-title">Current Genres</div>
+            <div id="genres-list"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+`;
+
+    // Tracks which screens have been injected so we don't re-inject
+    const _injectedScreens = new Set(['landing']); // landing is always in DOM
+
+    function ensureScreenInjected(role) {
+      if (_injectedScreens.has(role)) return;
+      const container = document.getElementById('screens-container');
+      if (!container) return;
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = SCREEN_TEMPLATES[role];
+      while (wrapper.firstChild) container.appendChild(wrapper.firstChild);
+      _injectedScreens.add(role);
+    }
+
+    window.onload = () => {
+      showScreen('landing');
+      startWarmPing();
+    };
+
+    // ── APPS SCRIPT WARM PING ────────────────────────────────
+    // Apps Script goes cold after ~10 min of inactivity and takes
+    // 1–3 s to wake up on the next request. Pinging every 8 min
+    // keeps the instance warm for as long as the page is open,
+    // so login and data loads never hit a cold start.
+    // The ping fires a lightweight 'getAll' request (which the
+    // server answers from its CacheService cache — no Sheet read).
+    let _warmPingInterval = null;
+
+    function startWarmPing() {
+      stopWarmPing();
+      // First ping after 8 min, then every 8 min thereafter
+      _warmPingInterval = setInterval(() => {
+        if (document.hidden) return; // don't bother if the tab is backgrounded
+        // Skip if the URL is still the placeholder (not yet deployed)
+        if (!CONFIG.scriptUrl || CONFIG.scriptUrl.includes('YOUR_APPS_SCRIPT')) return;
+        scriptGet('getAll').catch(() => { }); // silent — we don't need the result
+      }, 8 * 60 * 1000);
+    }
+
+    function stopWarmPing() {
+      if (_warmPingInterval) {
+        clearInterval(_warmPingInterval);
+        _warmPingInterval = null;
+      }
+    }
+
+    // ── PREFETCH ON HOVER ────────────────────────────────────
+    // Called when the user hovers over any role card on the landing
+    // page. Silently kicks off a getAll() fetch in the background
+    // so the data is already in-cache by the time they sign in.
+    // Rate-limited: only fires if data isn't already fresh.
+    function prefetchData() {
+      const age = Date.now() - lastFetchedAt;
+      if (age < DATA_FRESHNESS_MS && inventoryCache.length > 0) return; // already warm
+      scriptGet('getAll').then(all => {
+        // Populate caches exactly as loadData() would, without triggering any UI update
+        if (!all) return;
+        inventoryCache = (all.inventory || []).map(r => ({
+          bookId: r.BookID || '',
+          title: r.Title || '',
+          author: r.Author || '',
+          genre: r.Genre || '',
+          subgenre: r.SubGenre || '',
+          ageGroup: r.AgeGroup || '',
+          language: r.Language || '',
+          available: (r.Available === 'Yes' || r.Available === 'No') ? r.Available : 'Yes',
+          condition: r.Condition || '',
+          _rowIndex: r._rowIndex
+        })).filter(r => r.bookId && r.bookId !== 'REMOVED');
+
+        checkoutsCache = (all.checkouts || []).map(r => ({
+          checkoutId: r.CheckoutID || '',
+          rollNumber: r.RollNumber || '',
+          bookId: r.BookID || '',
+          title: r.Title || '',
+          checkoutDate: r.CheckoutDate || '',
+          dueDate: r.DueDate || '',
+          returned: r.Returned || 'No',
+          _rowIndex: r._rowIndex
+        }));
+
+        genresCache = (all.genres || []).map(r => ({
+          genre: r.Genre || '',
+          subgenre: r.SubGenre || '',
+          _rowIndex: r._rowIndex
+        }));
+
+        lastFetchedAt = Date.now();
+      }).catch(() => { }); // silent — this is best-effort prefetch
+    }
+
+    // saveSetup removed — configuration hardcoded in CONFIG
+
+    // ══════════════════════════════════════
+    // SCREEN ROUTING
+    // ══════════════════════════════════════
+    function showScreen(name) {
+      // Inject the screen HTML on first use, then flip the active class
+      if (name !== 'landing') ensureScreenInjected(name);
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + name).classList.add('active');
+    }
+
+    // ══════════════════════════════════════
+    // LOGIN
+    // ══════════════════════════════════════
+    const ROLE_META = {
+      student: { icon: '🎒', title: 'Student/Teacher Login', sub: 'Enter the student password to browse the catalogue' },
+      librarian: { icon: '📖', title: 'Librarian Login', sub: 'Enter your password to access checkout management' },
+      principal: { icon: '🏛️', title: 'Principal/Director Login', sub: 'Enter your password to access full system controls' }
+    };
+
+    function openLogin(role) {
+      currentRole = role;
+      const meta = ROLE_META[role];
+      document.getElementById('modal-icon').textContent = meta.icon;
+      document.getElementById('modal-title').textContent = meta.title;
+      document.getElementById('modal-sub').textContent = meta.sub;
+      document.getElementById('login-password').value = '';
+      document.getElementById('login-error').style.display = 'none';
+      document.getElementById('login-modal').classList.add('open');
+      setTimeout(() => document.getElementById('login-password').focus(), 100);
+    }
+
+    function closeLogin() {
+      document.getElementById('login-modal').classList.remove('open');
+      currentRole = null;
+    }
+
+    async function doLogin() {
+      const pw = document.getElementById('login-password').value;
+      const btn = document.getElementById('login-submit-btn');
+      const errEl = document.getElementById('login-error');
+      errEl.style.display = 'none';
+
+      if (btn) btn.disabled = true;
+      try {
+        const data = await scriptCall({ action: 'login', role: currentRole, password: pw });
+        sessionToken = data.token;
+        document.getElementById('login-modal').classList.remove('open');
+        enterDashboard(currentRole);
+      } catch (e) {
+        errEl.textContent = 'Incorrect password. Please try again.';
+        errEl.style.display = 'block';
+        document.getElementById('login-password').select();
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function logout() {
+      currentRole = null;
+      sessionToken = null;
+      lastFetchedAt = 0;
+      clearSubgenreFilterCache();
+      _gbCache.clear();
+      inventoryCache = [];
+      checkoutsCache = [];
+      genresCache = [];
+      selectedCheckoutBook = null;
+      bookToRemove = null;
+      showScreen('landing');
+    }
+
+    // ══════════════════════════════════════
+    // DASHBOARD ENTRY
+    // ══════════════════════════════════════
+    // ── SKELETON HELPERS ────────────────────────────────────────────────
+    // Generates N placeholder rows so something appears instantly on screen
+    // while real data loads in the background (Feature 1: Show UI immediately).
+    function skeletonRows(n, cols) {
+      const widths = ['30%', '55%', '40%', '25%', '35%', '20%', '22%', '18%'];
+      return Array.from({ length: n }, () => `
+    <tr class="skeleton-row">
+      ${Array.from({ length: cols }, (_, i) =>
+        `<td><div class="skeleton" style="width:${widths[i % widths.length]}"></div></td>`
+      ).join('')}
+    </tr>`
+      ).join('');
+    }
+
+    function showStudentSkeleton() {
+      const el = document.getElementById('student-skeleton-tbody');
+      if (el) el.innerHTML = skeletonRows(8, 8);
+    }
+
+    // ── ENTER DASHBOARD ──────────────────────────────────────────────────
+    async function enterDashboard(role) {
+      document.querySelectorAll('[id^="topbar-school"]').forEach(el => el.textContent = CONFIG.schoolName);
+      showScreen(role);
+
+      if (role === 'student') {
+        // Show skeleton immediately, hide real table until data arrives
+        showStudentSkeleton();
+        document.getElementById('student-loading').classList.remove('hidden');
+        document.getElementById('student-table-wrap').classList.add('hidden');
+
+        await loadData();
+
+        document.getElementById('student-loading').classList.add('hidden');
+        document.getElementById('student-table-wrap').classList.remove('hidden');
+        renderStudentTable();
+      }
+
+      if (role === 'librarian') {
+        libTab('dashboard');
+        document.getElementById('lib-date-display').textContent = formatDate(new Date());
+        // Render dashboard immediately with whatever is cached; loadData fills it in
+        updateLibDashboard();
+        await loadData();
+        updateLibDashboard();
+      }
+
+      if (role === 'principal') {
+        prinTab('dashboard');
+        document.getElementById('prin-date-display').textContent = formatDate(new Date());
+        updatePrinDashboard();
+        await loadData();
+        updatePrinDashboard();
+      }
+    }
+
+    // ══════════════════════════════════════
+    // APPS SCRIPT BACKEND API
+    // All data goes through your Apps Script
+    // Web App — no API key exposed.
+    // ══════════════════════════════════════
+    // All requests go through GET to avoid CORS preflight issues with Apps Script.
+    // Parameters are sent as plain URL query params (JSON.stringify for objects/arrays).
+    const WRITE_ACTIONS = new Set(['appendRow', 'updateCell', 'updateRow', 'deleteRow', 'rewriteSheet', 'addGenre']);
+
+    async function scriptCall(params) {
+      const url = new URL(CONFIG.scriptUrl);
+
+      // Attach the session token automatically for any write action.
+      // login/getAll do not require one.
+      if (WRITE_ACTIONS.has(params.action)) {
+        if (!sessionToken) throw new Error('You have been signed out. Please log in again.');
+        params = { ...params, token: sessionToken };
+      }
+
+      Object.entries(params).forEach(([k, v]) => {
+        url.searchParams.set(k, typeof v === 'object' ? JSON.stringify(v) : v);
+      });
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error('Backend error: ' + res.status);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Unknown error');
+      return json.data;
+    }
+
+    async function scriptGet(action) {
+      return scriptCall({ action });
+    }
+
+    // Write helpers — all use GET with action + params.
+    // Row identification now happens server-side by stable ID (bookId / checkoutId),
+    // not by a client-cached row number, so concurrent edits from other users can't
+    // cause an update/delete to land on the wrong row.
+
+    async function sheetsAppend(tab, row) {
+      const tabName = tab.split('!')[0];
+      return scriptCall({ action: 'appendRow', tab: tabName, row: JSON.stringify(row) });
+    }
+
+    // Update a single cell, identified by the record's stable ID rather than a row number.
+    async function sheetsUpdateCellById(tabName, id, colLetter, value) {
+      const col = colToNum(colLetter);
+      return scriptCall({ action: 'updateCell', tab: tabName, id, col, value });
+    }
+
+    // Replace an entire row's values, identified by the record's stable ID.
+    async function sheetsUpdateRowById(tabName, id, values) {
+      return scriptCall({ action: 'updateRow', tab: tabName, id, values: JSON.stringify(values) });
+    }
+
+    async function sheetsDeleteRowById(tabName, id) {
+      return scriptCall({ action: 'deleteRow', tab: tabName, id });
+    }
+
+    async function sheetsRewrite(tabName, rows) {
+      return scriptCall({ action: 'rewriteSheet', tab: tabName, rows: JSON.stringify(rows) });
+    }
+
+    function colToNum(col) {
+      let n = 0;
+      for (let i = 0; i < col.length; i++) {
+        n = n * 26 + col.charCodeAt(i) - 64;
+      }
+      return n;
+    }
+
+    // ══════════════════════════════════════
+    // DATA LOADING
+    // ══════════════════════════════════════
+    // How long (ms) client-side data is considered fresh before a re-fetch is
+    // triggered. Matches the backend's CacheService TTL (30s) with a small buffer.
+    const DATA_FRESHNESS_MS = 35_000;
+
+    // loadData({ force: true }) always re-fetches from the backend.
+    // loadData()               skips the fetch if data was loaded within DATA_FRESHNESS_MS,
+    //                          which avoids redundant network calls when the user switches
+    //                          tabs or signs in again quickly.
+    async function loadData({ force = false } = {}) {
+      const age = Date.now() - lastFetchedAt;
+      if (!force && age < DATA_FRESHNESS_MS && inventoryCache.length > 0) {
+        return; // data is fresh — skip the network round-trip
+      }
+
+      try {
+        const all = await scriptGet('getAll');
+
+        inventoryCache = (all.inventory || []).map(r => ({
+          bookId: r.BookID || '',
+          title: r.Title || '',
+          author: r.Author || '',
+          genre: r.Genre || '',
+          subgenre: r.SubGenre || '',
+          ageGroup: r.AgeGroup || '',
+          language: r.Language || '',
+          available: (r.Available === 'Yes' || r.Available === 'No') ? r.Available : 'Yes',
+          condition: r.Condition || '',
+          _rowIndex: r._rowIndex
+        })).filter(r => r.bookId && r.bookId !== 'REMOVED');
+
+        checkoutsCache = (all.checkouts || []).map(r => ({
+          checkoutId: r.CheckoutID || '',
+          rollNumber: r.RollNumber || '',
+          bookId: r.BookID || '',
+          title: r.Title || '',
+          checkoutDate: r.CheckoutDate || '',
+          dueDate: r.DueDate || '',
+          returned: r.Returned || 'No',
+          _rowIndex: r._rowIndex
+        }));
+
+        genresCache = (all.genres || []).map(r => ({
+          genre: r.Genre || '',
+          subgenre: r.SubGenre || '',
+          _rowIndex: r._rowIndex
+        }));
+
+        lastFetchedAt = Date.now(); // mark data as fresh
+        clearSubgenreFilterCache(); // inventory changed — invalidate memoised filter lists
+
+      } catch (e) {
+        // Log silently — a brief load error on login is non-critical
+        // Only show toast if data is completely empty after load attempt
+        console.error('Data load error:', e);
+        if (!inventoryCache.length && !genresCache.length) {
+          showToast('Could not connect. Please refresh the page.', 'error');
+        }
+      }
+    }
+
+    // ══════════════════════════════════════
+    // HELPERS
+    // ══════════════════════════════════════
+    function formatDate(d) {
+      if (!d) return '';
+      d = toDateOnly(d);
+      if (!d || isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function toDateOnly(d) {
+      // Normalises any date representation to a midnight-local Date object:
+      //   • Real Date objects         → strip time component
+      //   • "YYYY-MM-DD" strings      → parse as local date (no UTC shift)
+      //   • ISO datetime strings      → take the date part, parse locally
+      //   • Any other string          → try native Date parse as a last resort
+      //   • Empty / null / undefined  → return null (caller should guard)
+      if (!d) return null;
+      if (d instanceof Date) {
+        if (isNaN(d.getTime())) return null;
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      }
+      const s = String(d).trim();
+      if (!s) return null;
+
+      // Primary format: YYYY-MM-DD (what Code.gs now always sends)
+      const isoMatch = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (isoMatch) {
+        return new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]));
+      }
+
+      // Fallback: try native parse (handles full ISO datetime strings that may
+      // slip through in edge cases); shift to local date to strip the time part
+      const native = new Date(s);
+      if (!isNaN(native.getTime())) {
+        return new Date(native.getFullYear(), native.getMonth(), native.getDate());
+      }
+
+      return null; // genuinely unparseable
+    }
+
+    function formatDateShort(d) {
+      if (!d) return '—';
+      const parsed = toDateOnly(d);
+      if (!parsed || isNaN(parsed.getTime())) return '—';
+      return parsed.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function daysFromNow(dateStr) {
+      const due = toDateOnly(dateStr);
+      if (!due || isNaN(due.getTime())) return 0;
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      due.setHours(0, 0, 0, 0);
+      return Math.ceil((due - now) / (1000 * 60 * 60 * 24));
+    }
+
+    function getStatus(checkout) {
+      if (checkout.returned === 'Yes') return 'returned';
+      const days = daysFromNow(checkout.dueDate);
+      if (days < 0) return 'overdue';
+      return 'active';
+    }
+
+    function statusChip(status, daysLeft) {
+      if (status === 'returned') return '<span class="chip chip-returned">Returned</span>';
+      if (status === 'overdue') return `<span class="overdue-flag">⚠ Overdue ${Math.abs(daysLeft)}d</span>`;
+      if (daysLeft <= 3) return `<span class="due-soon-flag">⏰ Due in ${daysLeft}d</span>`;
+      return `<span class="chip chip-checked">Active · Due in ${daysLeft}d</span>`;
+    }
+
+    function conditionChip(c) {
+      if (!c) return '—';
+      const cls = { Good: 'good', Fair: 'fair', Poor: 'poor', Damaged: 'damaged' }[c] || '';
+      return `<span class="chip chip-${cls}">${c}</span>`;
+    }
+
+    function genreChip(genre) {
+      const cls = genre === 'Fiction' ? 'fiction' : 'nonfiction';
+      return `<span class="chip chip-${cls}">${genre}</span>`;
+    }
+
+    function sanitize(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      // textContent->innerHTML already escapes &, <, >, and ". It does NOT escape
+      // single quotes or backticks, which matters because several places in this
+      // app interpolate sanitize()'d values directly inside onclick="...('...')"
+      // attributes built with single-quoted strings or backtick template literals.
+      // Escape those explicitly so a crafted title/author/genre/roll number can't
+      // break out of the attribute and inject a new handler (stored XSS).
+      return d.innerHTML
+        .replace(/'/g, '&#39;')
+        .replace(/`/g, '&#96;');
+    }
+
+    // Book IDs and Checkout IDs are now generated server-side (in code.gs) under a
+    // lock, using a live read of the sheet — this guarantees uniqueness even when
+    // multiple users add books/checkouts at the same time. The client no longer
+    // computes IDs itself; see sheetsAppend() call sites for where the server's
+    // returned ID is used.
+
+    function todayISO() {
+      // Use local date parts to avoid UTC timezone shift
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function addDays(dateStr, days) {
+      // Parse date parts directly to avoid UTC shift
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const date = new Date(y, m - 1, d);
+      date.setDate(date.getDate() + days);
+      const yr = date.getFullYear();
+      const mo = String(date.getMonth() + 1).padStart(2, '0');
+      const dy = String(date.getDate()).padStart(2, '0');
+      return `${yr}-${mo}-${dy}`;
+    }
+
+    // genCheckoutId removed — Checkout IDs are now generated server-side (see code.gs)
+
+    function getSubgenresForGenre(genre) {
+      const fromSheet = genresCache.filter(g => g.genre === genre).map(g => g.subgenre);
+      const defaults = DEFAULT_GENRES[genre] || [];
+      const merged = [...new Set([...defaults, ...fromSheet])];
+      return merged;
+    }
+
+    // Returns the union of all sub-genres actually present in the inventory
+    // (pipe-split), filtered by genre if provided. Result is memoised per genre
+    // key and cleared whenever inventoryCache changes (loadData or a write op).
+    let _subgenreFilterCache = {};
+
+    function clearSubgenreFilterCache() {
+      _subgenreFilterCache = {};
+    }
+
+    function getAllSubgenresForFilter(genre) {
+      const key = genre || '__all__';
+      if (_subgenreFilterCache[key]) return _subgenreFilterCache[key];
+
+      const seen = new Set();
+      inventoryCache.forEach(b => {
+        if (genre && b.genre !== genre) return;
+        splitSubgenres(b.subgenre).forEach(sg => seen.add(sg));
+      });
+      getSubgenresForGenre(genre).forEach(sg => seen.add(sg));
+      const result = [...seen].sort();
+      _subgenreFilterCache[key] = result;
+      return result;
+    }
+
+    // ════════════════════════════════════════════════════════
+    // SUBGENRE SHORT FORM MAP
+    // ════════════════════════════════════════════════════════
+    const SUBGENRE_SHORT = {
+      'Historical Fiction': 'HiFi',
+      'Mystery': 'Myst',
+      'Fantasy': 'Fant',
+      'Folktale': 'Folk',
+      'Science Fiction': 'ScFi',
+      'Religious Fiction': 'ReFi',
+      'Biographies': 'Biog',
+      'Poetry': 'Poet',
+      'Action/Adventure': 'ActA',
+      'Horror': 'Horr',
+      'Romance': 'Roma',
+      'Thriller': 'Thrl',
+      'Mythology': 'Myth',
+      'Graphic Novel': 'GrNv',
+      'Short Stories': 'ShSt',
+      'Self Help': 'SfHp',
+      'Drama': 'Dram',
+      'Comedy': 'Comd',
+      'Satire': 'Satr',
+      'Adventure': 'Advn',
+    };
+
+    // Auto-shorten an unknown sub-genre to 4 chars
+    function autoShort(name) {
+      const words = name.replace(/[^a-zA-Z ]/g, ' ').trim().split(/\s+/);
+      if (words.length === 1) return words[0].substring(0, 4);
+      // Two+ words: first 2 chars of each, up to 4 total
+      return words.map(w => w.substring(0, 2)).join('').substring(0, 4);
+    }
+
+    function subgenreShort(name) {
+      return SUBGENRE_SHORT[name] || autoShort(name);
+    }
+
+    // Split a pipe-separated subgenre string into an array
+    function splitSubgenres(str) {
+      if (!str) return [];
+      return str.split('|').map(s => s.trim()).filter(Boolean);
+    }
+
+    // Check if a book's pipe-separated subgenre field contains a given value
+    function subgenreIncludes(bookSubgenre, filter) {
+      return splitSubgenres(bookSubgenre).includes(filter);
+    }
+
+    // Render compact chips for a table cell (max 2 shown, +N more on hover)
+    function subgenreChips(subgenreStr) {
+      const tags = splitSubgenres(subgenreStr);
+      if (!tags.length) return '<span style="color:var(--text-light);font-size:12px;">—</span>';
+      const fullList = tags.join(' · ');
+      const visible = tags.slice(0, 2);
+      const overflow = tags.length - 2;
+      let html = '<div class="sg-table-chips">';
+      html += visible.map(t =>
+        `<span class="sg-tbl-chip" title="${sanitize(fullList)}">${sanitize(subgenreShort(t))}</span>`
+      ).join('');
+      if (overflow > 0) {
+        html += `<span class="sg-tbl-overflow" title="${sanitize(fullList)}">+${overflow}</span>`;
+      }
+      html += '</div>';
+      return html;
+    }
+
+    // ════════════════════════════════════════════════════════
+    // MULTI-TAG CHIP PICKER SYSTEM
+    // Each form (prefix: 'add', 'lib-ab', 'edit') has:
+    //   - a tags container: #{prefix}-sg-tags
+    //   - an add-dropdown:  #{prefix}-sg-dropdown
+    // Selected values are kept in a Set on the DOM element.
+    // ════════════════════════════════════════════════════════
+
+    // Get the Set of selected subgenres for a prefix
+    function getChipSet(prefix) {
+      const el = document.getElementById(prefix + '-sg-tags');
+      if (!el._chipSet) el._chipSet = new Set();
+      return el._chipSet;
+    }
+
+    // Get the pipe-joined value for form submission
+    function getChipValues(prefix) {
+      return [...getChipSet(prefix)].join('|');
+    }
+
+    // Add a chip programmatically (used by openEditModal + Google Books)
+    function addChipValue(prefix, value) {
+      if (!value || !value.trim()) return;
+      const val = value.trim();
+      const set = getChipSet(prefix);
+      if (set.has(val)) return; // already added
+      set.add(val);
+      renderChips(prefix);
+    }
+
+    // Remove a chip
+    function removeChipValue(prefix, value) {
+      getChipSet(prefix).delete(value);
+      renderChips(prefix);
+    }
+
+    // Clear all chips
+    function clearChips(prefix) {
+      const el = document.getElementById(prefix + '-sg-tags');
+      if (el) el._chipSet = new Set();
+      renderChips(prefix);
+    }
+
+    // Re-render all chips in the tags container
+    function renderChips(prefix) {
+      const container = document.getElementById(prefix + '-sg-tags');
+      if (!container) return;
+      const set = getChipSet(prefix);
+      container.innerHTML = [...set].map(v => `
+    <span class="sg-chip" title="${sanitize(v)}">
+      ${sanitize(v)}
+      <button class="sg-remove" onclick="removeChipValue('${sanitize(prefix)}','${sanitize(v)}')" title="Remove">×</button>
+    </span>`
+      ).join('');
+    }
+
+    // Called by the "+ Add" button
+    function addSubgenreChip(prefix) {
+      const dd = document.getElementById(prefix + '-sg-dropdown');
+      if (!dd || !dd.value) return;
+      addChipValue(prefix, dd.value);
+      dd.value = ''; // reset dropdown after adding
+    }
+
+    // Populate the add-dropdown for a given prefix (mirrors old populateAddSubgenre)
+    function populateAddSubgenreDropdown(prefix) {
+      // For 'edit', the select id is 'edit-genre'; for others it's prefix+'-genre'
+      const genreEl = document.getElementById(prefix + '-genre');
+      const dd = document.getElementById(prefix + '-sg-dropdown');
+      if (!genreEl || !dd) return;
+      const genre = genreEl.value;
+      dd.innerHTML = '<option value="">— pick a sub-genre —</option>';
+      if (genre) {
+        getSubgenresForGenre(genre).forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s; opt.textContent = s;
+          dd.appendChild(opt);
+        });
+      }
+    }
+
+    // ════════════════════════════════════════════════════════
+    // GOOGLE BOOKS API INTEGRATION
+    // Auto-fires (debounced) when title + author both have ≥3 chars.
+    // Maps Google's categories to our sub-genre list, pre-selects
+    // matches as chips, and offers to add unknown ones.
+    // ════════════════════════════════════════════════════════
+
+    // Keyword → our sub-genre name (case-insensitive substring match)
+    const GB_CATEGORY_MAP = [
+      ['historical', 'Historical Fiction'],
+      ['mystery', 'Mystery'],
+      ['detective', 'Mystery'],
+      ['crime', 'Mystery'],
+      ['fantasy', 'Fantasy'],
+      ['magic', 'Fantasy'],
+      ['fairy', 'Fantasy'],
+      ['folktale', 'Folktale'],
+      ['folk tale', 'Folktale'],
+      ['fable', 'Folktale'],
+      ['science fiction', 'Science Fiction'],
+      ['sci-fi', 'Science Fiction'],
+      ['space', 'Science Fiction'],
+      ['religious', 'Religious Fiction'],
+      ['christian fiction', 'Religious Fiction'],
+      ['spiritual', 'Religious Fiction'],
+      ['biography', 'Biographies'],
+      ['autobiography', 'Biographies'],
+      ['memoir', 'Biographies'],
+      ['poetry', 'Poetry'],
+      ['verse', 'Poetry'],
+      ['action', 'Action/Adventure'],
+      ['adventure', 'Action/Adventure'],
+      ['thriller', 'Thriller'],
+      ['suspense', 'Thriller'],
+      ['horror', 'Horror'],
+      ['romance', 'Romance'],
+      ['love story', 'Romance'],
+      ['mythology', 'Mythology'],
+      ['myth', 'Mythology'],
+      ['graphic novel', 'Graphic Novel'],
+      ['comic', 'Graphic Novel'],
+      ['short stor', 'Short Stories'],
+      ['self-help', 'Self Help'],
+      ['self help', 'Self Help'],
+      ['drama', 'Drama'],
+      ['satire', 'Satire'],
+    ];
+
+    // Map a single Google category string to our sub-genre name (or null)
+    function mapGBCategory(cat) {
+      const lower = cat.toLowerCase();
+      for (const [keyword, mapped] of GB_CATEGORY_MAP) {
+        if (lower.includes(keyword)) return mapped;
+      }
+      return null;
+    }
+
+    // Clean up a raw Google category string into a candidate sub-genre name
+    function cleanGBCategory(cat) {
+      // Google returns "Juvenile Fiction / Fantasy & Magic / General" etc.
+      // Take the last meaningful segment, remove "General", trim
+      const parts = cat.split('/').map(p => p.trim()).filter(p => p && p.toLowerCase() !== 'general');
+      return parts[parts.length - 1] || cat.trim();
+    }
+
+    let _gbTimers = {};
+    const _gbCache = new Map(); // key: "title|author" → result
+
+    // Renders the Google Books suggestion banner.
+    // Called from fetchGoogleBooks (fresh result) and the cache path (cached result).
+    function renderGBBanner(prefix, banner, result) {
+      const { matched, unknown } = result;
+      const allSubs = Object.values(DEFAULT_GENRES).flat()
+        .concat(genresCache.map(g => g.subgenre));
+
+      let html = '<div class="gb-label">📚 Google Books suggestion:</div><div class="gb-chips">';
+
+      matched.forEach(sg => {
+        const alreadyAdded = getChipSet(prefix).has(sg);
+        html += `<span class="gb-sug-chip ${alreadyAdded ? 'applied' : ''}"
+      onclick="applyGBSuggestion('${sanitize(prefix)}','${sanitize(sg)}')"
+      title="Click to add">${sanitize(sg)}</span>`;
+      });
+
+      unknown.forEach(cand => {
+        if (allSubs.some(s => s.toLowerCase() === cand.toLowerCase())) return;
+        html += `<span class="gb-sug-chip" style="border-style:dashed;"
+      onclick="addNewFromGB('${sanitize(prefix)}','${sanitize(cand)}')"
+      title="Add as new sub-genre: ${sanitize(cand)}">+ ${sanitize(cand)}</span>`;
+      });
+
+      html += '</div>';
+      if (!matched.length && !unknown.length) {
+        html = '<span class="gb-label">ℹ️ Could not match categories — please select manually.</span>';
+      }
+      banner.innerHTML = html;
+
+      // Auto-apply matched suggestions as chips
+      matched.forEach(sg => addChipValue(prefix, sg));
+
+      // Auto-populate genre dropdown from first match
+      if (matched.length > 0) {
+        const firstMatch = matched[0];
+        const genre = Object.entries(DEFAULT_GENRES).find(([g, subs]) => subs.includes(firstMatch))?.[0]
+          || genresCache.find(r => r.subgenre === firstMatch)?.genre;
+        if (genre) {
+          const genreEl = document.getElementById(prefix + '-genre');
+          if (genreEl) { genreEl.value = genre; populateAddSubgenreDropdown(prefix); }
+        }
+      }
+    }
+
+    function debounceGoogleBooks(prefix) {
+      clearTimeout(_gbTimers[prefix]);
+      _gbTimers[prefix] = setTimeout(() => fetchGoogleBooks(prefix), 600);
+    }
+
+    async function fetchGoogleBooks(prefix) {
+      const titleEl = document.getElementById(prefix + '-title');
+      const authorEl = document.getElementById(prefix + '-author');
+      const banner = document.getElementById(prefix + '-gb-banner');
+      if (!titleEl || !authorEl || !banner) return;
+
+      const title = titleEl.value.trim();
+      const author = authorEl.value.trim();
+      if (title.length < 3 || author.length < 2) {
+        banner.classList.add('hidden');
+        return;
+      }
+
+      // Check in-session cache before hitting the network
+      const cacheKey = `${title.toLowerCase()}|${author.toLowerCase()}`;
+      if (_gbCache.has(cacheKey)) {
+        renderGBBanner(prefix, banner, _gbCache.get(cacheKey));
+        return;
+      }
+
+      banner.innerHTML = '<span class="gb-label">🔍 Looking up on Google Books…</span>';
+      banner.classList.remove('hidden');
+
+      try {
+        const q = encodeURIComponent(`intitle:${title}+inauthor:${author}`);
+        const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=3&fields=items(volumeInfo(categories))`);
+        const data = await res.json();
+
+        const rawCats = new Set();
+        (data.items || []).forEach(item => {
+          (item.volumeInfo?.categories || []).forEach(c => rawCats.add(c));
+        });
+
+        if (!rawCats.size) {
+          banner.innerHTML = '<span class="gb-label">ℹ️ No genre data found for this title — please select manually.</span>';
+          return;
+        }
+
+        // Map raw categories → our sub-genre names
+        const matched = new Set();
+        const unknown = new Set();
+        const allSubs = Object.values(DEFAULT_GENRES).flat()
+          .concat(genresCache.map(g => g.subgenre));
+
+        rawCats.forEach(cat => {
+          const mapped = mapGBCategory(cat);
+          if (mapped) {
+            matched.add(mapped);
+          } else {
+            const clean = cleanGBCategory(cat);
+            if (clean.length >= 2) unknown.add(clean);
+          }
+        });
+
+        const result = { matched: [...matched], unknown: [...unknown] };
+
+        // Store in session cache so repeat lookups for the same title/author are instant
+        _gbCache.set(cacheKey, result);
+
+        renderGBBanner(prefix, banner, result);
+
+      } catch (e) {
+        banner.innerHTML = '<span class="gb-label">⚠️ Could not reach Google Books. Please select genre manually.</span>';
+        console.warn('Google Books API error:', e);
+      }
+    }
+
+    function applyGBSuggestion(prefix, sg) {
+      addChipValue(prefix, sg);
+      // Update chip appearance in banner
+      const banner = document.getElementById(prefix + '-gb-banner');
+      if (banner) {
+        banner.querySelectorAll('.gb-sug-chip').forEach(el => {
+          if (el.textContent.trim() === sg) el.classList.add('applied');
+        });
+      }
+    }
+
+    async function addNewFromGB(prefix, candidateName) {
+      // Determine parent genre from DEFAULT_GENRES or genresCache
+      const genreEl = document.getElementById(prefix + '-genre');
+      const genre = genreEl?.value || 'Fiction';
+
+      // Validate before sending — Google Books can return verbose strings that
+      // don't pass our pattern; let the user clean it up before it hits the server.
+      const cleaned = candidateName.trim();
+      if (!GENRE_NAME_PATTERN.test(cleaned)) {
+        showToast(`"${cleaned}" contains characters not allowed in sub-genre names. Edit it manually in Manage Genres.`, 'error');
+        return;
+      }
+
+      if (!confirm(`Add "${cleaned}" as a new sub-genre under "${genre}"?`)) return;
+
+      try {
+        await scriptCall({ action: 'addGenre', genre, subgenre: cleaned });
+        genresCache.push({ genre, subgenre: cleaned });
+        populateAddSubgenreDropdown(prefix);
+        addChipValue(prefix, cleaned);
+        showToast(`✓ "${cleaned}" added as new sub-genre.`, 'success');
+        // Refresh banners
+        const banner = document.getElementById(prefix + '-gb-banner');
+        if (banner) {
+          banner.querySelectorAll('.gb-sug-chip').forEach(el => {
+            if (el.textContent.trim() === '+ ' + candidateName) el.classList.add('applied');
+          });
+        }
+      } catch (e) {
+        showToast(e.message || 'Failed to add sub-genre.', 'error');
+      }
+    }
+
+    // ══════════════════════════════════════
+    // TOAST
+    // ══════════════════════════════════════
+    let toastTimer;
+    function showToast(msg, type = 'info') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `show ${type}`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.className = ''; }, 3200);
+    }
+
+    // ══════════════════════════════════════
+    // STUDENT VIEW
+    // ══════════════════════════════════════
+    function updateStudentSubgenreFilter() {
+      const genre = document.getElementById('student-genre-filter').value;
+      const sub = document.getElementById('student-subgenre-filter');
+      sub.innerHTML = '<option value="">All Sub-genres</option>';
+      getAllSubgenresForFilter(genre).forEach(s => {
+        sub.innerHTML += `<option value="${sanitize(s)}">${sanitize(s)}</option>`;
+      });
+      renderStudentTable();
+    }
+
+    function renderStudentTable() {
+      const q = document.getElementById('student-search').value.toLowerCase();
+      const genre = document.getElementById('student-genre-filter').value;
+      const subgenre = document.getElementById('student-subgenre-filter').value;
+      const age = document.getElementById('student-age-filter').value;
+      const language = document.getElementById('student-language-filter').value;
+      const avail = document.getElementById('student-avail-filter').value;
+
+      let books = inventoryCache.filter(b => {
+        if (q && !b.title.toLowerCase().includes(q) && !b.author.toLowerCase().includes(q)) return false;
+        if (genre && b.genre !== genre) return false;
+        if (subgenre && !subgenreIncludes(b.subgenre, subgenre)) return false;
+        if (age && b.ageGroup !== age) return false;
+        if (language && b.language !== language) return false;
+        if (avail && b.available !== avail) return false;
+        return true;
+      });
+
+      const tbody = document.getElementById('student-tbody');
+      if (books.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No books found matching your search.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = books.map(b => `
+    <tr>
+      <td><code style="font-size:12px;color:var(--text-mid);">${sanitize(b.bookId)}</code></td>
+      <td style="font-weight:500;">${sanitize(b.title)}</td>
+      <td>${sanitize(b.author)}</td>
+      <td>${genreChip(b.genre)}</td>
+      <td>${subgenreChips(b.subgenre)}</td>
+      <td>${sanitize(b.ageGroup || '—')}</td>
+      <td>${sanitize(b.language || '—')}</td>
+      <td>${b.available === 'Yes' ? '<span class="chip chip-available">Available</span>' : '<span class="chip chip-checked">Checked Out</span>'}</td>
+    </tr>
+  `).join('');
+    }
+
+    // ══════════════════════════════════════
+    // LIBRARIAN TABS
+    // ══════════════════════════════════════
+    function libTab(tab) {
+      ['dashboard', 'checkout', 'records', 'catalogue', 'addbook'].forEach(t => {
+        const el = document.getElementById('lib-' + t);
+        const btn = document.getElementById('lib-tab-' + t);
+        if (el) el.classList.toggle('hidden', t !== tab);
+        if (btn) btn.classList.toggle('active', t === tab);
+      });
+      if (tab === 'records') renderRecordsTable();
+      if (tab === 'catalogue') renderLibCatalogueTable();
+      if (tab === 'checkout') {
+        document.getElementById('checkout-book-list').style.display = 'none';
+        document.getElementById('checkout-selected-book').classList.add('hidden');
+        selectedCheckoutBook = null;
+      }
+    }
+
+    function updateLibDashboard() {
+      const active = checkoutsCache.filter(c => c.returned !== 'Yes');
+      const overdue = active.filter(c => daysFromNow(c.dueDate) < 0);
+      const dueSoon = active.filter(c => { const d = daysFromNow(c.dueDate); return d >= 0 && d <= 3; });
+
+      const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      set('lib-stat-total', inventoryCache.length);
+      set('lib-stat-checked', active.length);
+      set('lib-stat-due-soon', dueSoon.length);
+      set('lib-stat-overdue', overdue.length);
+
+      // Overdue list
+      const overdueEl = document.getElementById('lib-overdue-list');
+      if (overdueEl) {
+        if (overdue.length === 0) {
+          overdueEl.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0;">No overdue books. 🎉</p>';
+        } else {
+          overdueEl.innerHTML = overdue.map(c => `
+        <div style="padding:10px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:500;font-size:14px;">${sanitize(c.title)}</div>
+            <div style="font-size:12px;color:var(--text-light);">Roll: ${sanitize(c.rollNumber)} · Due: ${formatDateShort(c.dueDate)}</div>
+          </div>
+          <span class="overdue-flag">⚠ ${Math.abs(daysFromNow(c.dueDate))}d late</span>
+        </div>
+      `).join('');
+        }
+      }
+
+      // Due soon list
+      const dueSoonEl = document.getElementById('lib-duesoon-list');
+      if (dueSoonEl) {
+        if (dueSoon.length === 0) {
+          dueSoonEl.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0;">No books due in the next 3 days.</p>';
+        } else {
+          dueSoonEl.innerHTML = dueSoon.map(c => `
+        <div style="padding:10px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:500;font-size:14px;">${sanitize(c.title)}</div>
+            <div style="font-size:12px;color:var(--text-light);">Roll: ${sanitize(c.rollNumber)} · Due: ${formatDateShort(c.dueDate)}</div>
+          </div>
+          <span class="due-soon-flag">⏰ ${daysFromNow(c.dueDate)}d left</span>
+        </div>
+      `).join('');
+        }
+      }
+    }
+
+    function renderCheckoutBookList() {
+      const q = document.getElementById('checkout-book-search').value.toLowerCase().trim();
+      const wrap = document.getElementById('checkout-book-list');
+
+      if (!q) { wrap.style.display = 'none'; return; }
+
+      const books = inventoryCache.filter(b =>
+        (b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)) && b.available === 'Yes'
+      );
+
+      wrap.style.display = 'block';
+      const tbody = document.getElementById('checkout-book-tbody');
+
+      if (books.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No available books found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = books.map(b => `
+    <tr>
+      <td><code style="font-size:12px;">${sanitize(b.bookId)}</code></td>
+      <td style="font-weight:500;">${sanitize(b.title)}</td>
+      <td>${sanitize(b.author)}</td>
+      <td>${sanitize(b.subgenre)}</td>
+      <td><span class="chip chip-available">Available</span></td>
+      <td><button class="btn btn-gold btn-sm" onclick="selectCheckoutBook('${sanitize(b.bookId)}')">Select</button></td>
+    </tr>
+  `).join('');
+    }
+
+    function selectCheckoutBook(bookId) {
+      const book = inventoryCache.find(b => b.bookId === bookId);
+      if (!book) return;
+      selectedCheckoutBook = book;
+      document.getElementById('checkout-book-list').style.display = 'none';
+      document.getElementById('checkout-book-search').value = '';
+      const sel = document.getElementById('checkout-selected-book');
+      sel.classList.remove('hidden');
+      document.getElementById('checkout-selected-title').textContent = book.title;
+      document.getElementById('checkout-selected-meta').textContent = `${book.author} · ${splitSubgenres(book.subgenre).join(', ')} · ID: ${book.bookId}`;
+    }
+
+    async function submitCheckout() {
+      const roll = document.getElementById('checkout-roll').value.trim();
+      const days = parseInt(document.getElementById('checkout-days').value) || 14;
+      const errEl = document.getElementById('checkout-error');
+      const btn = document.getElementById('checkout-submit-btn');
+
+      errEl.classList.add('hidden');
+
+      if (!roll) { errEl.textContent = 'Please enter a student roll number.'; errEl.classList.remove('hidden'); return; }
+      if (!selectedCheckoutBook) { errEl.textContent = 'Please select a book to check out.'; errEl.classList.remove('hidden'); return; }
+
+      // Check if student already has this book
+      const alreadyHas = checkoutsCache.find(c => c.rollNumber === roll && c.bookId === selectedCheckoutBook.bookId && c.returned !== 'Yes');
+      if (alreadyHas) {
+        errEl.textContent = `Roll ${roll} has already checked out this book and not yet returned it.`;
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      const today = todayISO();
+      const due = addDays(today, days);
+      const bookId = selectedCheckoutBook.bookId;
+      const bookTitle = selectedCheckoutBook.title;
+
+      if (btn) btn.disabled = true;
+
+      // ── Optimistic update: reflect the change in the UI immediately ──
+      const bookRecord = inventoryCache.find(b => b.bookId === bookId);
+      const prevAvailable = bookRecord ? bookRecord.available : null;
+      const optimisticCheckout = { checkoutId: '__optimistic__', rollNumber: roll, bookId, title: bookTitle, checkoutDate: today, dueDate: due, returned: 'No' };
+      if (bookRecord) bookRecord.available = 'No';
+      checkoutsCache.push(optimisticCheckout);
+      updateLibDashboard();
+      showToast(`Saving checkout…`, 'info');
+
+      try {
+        // checkoutId is generated server-side and returned to us — never trust a client-made one
+        const result = await sheetsAppend('Checkouts', ['', roll, bookId, bookTitle, today, due, 'No']);
+        const checkoutId = result.checkoutId;
+
+        // Replace optimistic entry with the real server-confirmed one
+        const optIdx = checkoutsCache.findIndex(c => c.checkoutId === '__optimistic__');
+        if (optIdx !== -1) checkoutsCache[optIdx] = { ...optimisticCheckout, checkoutId };
+
+        // Persist availability update to the sheet
+        await sheetsUpdateCellById('Inventory', bookId, 'F', 'No');
+
+        showToast(`✓ "${bookTitle}" checked out to Roll ${roll}. Due: ${formatDateShort(due)}`, 'success');
+
+        // Reset form
+        document.getElementById('checkout-roll').value = '';
+        document.getElementById('checkout-selected-book').classList.add('hidden');
+        selectedCheckoutBook = null;
+        updateLibDashboard();
+
+      } catch (e) {
+        // ── Rollback: undo the optimistic change ──
+        if (bookRecord && prevAvailable !== null) bookRecord.available = prevAvailable;
+        const optIdx = checkoutsCache.findIndex(c => c.checkoutId === '__optimistic__');
+        if (optIdx !== -1) checkoutsCache.splice(optIdx, 1);
+        updateLibDashboard();
+        errEl.textContent = 'Failed to save checkout. Check your Apps Script URL and permissions.';
+        errEl.classList.remove('hidden');
+        console.error(e);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function renderRecordsTable() {
+      const q = document.getElementById('records-search').value.toLowerCase();
+      const statusF = document.getElementById('records-status-filter').value;
+
+      let records = checkoutsCache.filter(c => {
+        if (q && !c.rollNumber.toLowerCase().includes(q) && !c.title.toLowerCase().includes(q)) return false;
+        const s = getStatus(c);
+        if (statusF && s !== statusF) return false;
+        return true;
+      }).sort((a, b) => (toDateOnly(b.checkoutDate) || 0) - (toDateOnly(a.checkoutDate) || 0));
+
+      const tbody = document.getElementById('records-tbody');
+      if (records.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No records found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = records.map((c, i) => {
+        const s = getStatus(c);
+        const d = daysFromNow(c.dueDate);
+        return `
+      <tr>
+        <td style="font-weight:600;">${sanitize(c.rollNumber)}</td>
+        <td>${sanitize(c.title)}</td>
+        <td><code style="font-size:12px;color:var(--text-mid);">${sanitize(c.bookId)}</code></td>
+        <td>${formatDateShort(c.checkoutDate)}</td>
+        <td>${formatDateShort(c.dueDate)}</td>
+        <td>${statusChip(s, d)}</td>
+        <td>${s !== 'returned' ? `<button class="btn btn-sm" style="background:var(--success);color:white;" onclick="markReturned('${sanitize(c.checkoutId)}', this)">✓ Return</button>` : '—'}</td>
+      </tr>
+    `;
+      }).join('');
+    }
+
+    async function markReturned(checkoutId, btn) {
+      const idx = checkoutsCache.findIndex(x => x.checkoutId === checkoutId);
+      const c = checkoutsCache[idx];
+      if (!c || c.returned === 'Yes') return;
+
+      if (btn) btn.disabled = true;
+
+      // ── Optimistic update ──
+      const bookRecord = inventoryCache.find(b => b.bookId === c.bookId);
+      const prevBookAvailable = bookRecord ? bookRecord.available : null;
+      checkoutsCache[idx].returned = 'Yes';
+      if (bookRecord) bookRecord.available = 'Yes';
+      renderRecordsTable();
+      updateLibDashboard();
+
+      try {
+        await sheetsUpdateCellById('Checkouts', checkoutId, 'G', 'Yes');
+        if (bookRecord) await sheetsUpdateCellById('Inventory', c.bookId, 'F', 'Yes');
+
+        showToast(`✓ "${c.title}" marked as returned.`, 'success');
+        // Background sync — don't await, UI is already correct
+        loadData({ force: true }).then(() => {
+          renderRecordsTable();
+          updateLibDashboard();
+        });
+
+      } catch (e) {
+        // ── Rollback ──
+        checkoutsCache[idx].returned = 'No';
+        if (bookRecord && prevBookAvailable !== null) bookRecord.available = prevBookAvailable;
+        renderRecordsTable();
+        updateLibDashboard();
+        showToast('Failed to mark as returned. Please try again.', 'error');
+        console.error(e);
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function renderLibCatalogueTable() {
+      const q = document.getElementById('lib-cat-search').value.toLowerCase();
+      const genre = document.getElementById('lib-cat-genre').value;
+      const subgenre = document.getElementById('lib-cat-subgenre').value;
+      const language = document.getElementById('lib-cat-language').value;
+
+      let books = inventoryCache.filter(b => {
+        if (q && !b.title.toLowerCase().includes(q) && !b.author.toLowerCase().includes(q)) return false;
+        if (genre && b.genre !== genre) return false;
+        if (subgenre && !subgenreIncludes(b.subgenre, subgenre)) return false;
+        if (language && b.language !== language) return false;
+        return true;
+      });
+
+      const tbody = document.getElementById('lib-cat-tbody');
+      tbody.innerHTML = books.length === 0
+        ? '<tr class="empty-row"><td colspan="10">No books found.</td></tr>'
+        : books.map(b => `
+        <tr>
+          <td><code style="font-size:12px;">${sanitize(b.bookId)}</code></td>
+          <td style="font-weight:500;">${sanitize(b.title)}</td>
+          <td>${sanitize(b.author)}</td>
+          <td>${genreChip(b.genre)}</td>
+          <td>${subgenreChips(b.subgenre)}</td>
+          <td>${sanitize(b.ageGroup || '—')}</td>
+          <td>${sanitize(b.language || '—')}</td>
+          <td>${conditionChip(b.condition)}</td>
+          <td>${b.available === 'Yes' ? '<span class="chip chip-available">Available</span>' : '<span class="chip chip-checked">Checked Out</span>'}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-outline btn-sm" onclick="openHistoryModal('${sanitize(b.bookId)}')" style="margin-right:6px;">History</button>
+            <button class="btn btn-outline btn-sm" onclick="openEditModal('${sanitize(b.bookId)}')">Edit</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function updateLibCatSubgenre() {
+      const genre = document.getElementById('lib-cat-genre').value;
+      const sub = document.getElementById('lib-cat-subgenre');
+      sub.innerHTML = '<option value="">All Sub-genres</option>';
+      getAllSubgenresForFilter(genre).forEach(s => {
+        sub.innerHTML += `<option value="${sanitize(s)}">${sanitize(s)}</option>`;
+      });
+      renderLibCatalogueTable();
+    }
+
+    // ══════════════════════════════════════
+    // PRINCIPAL TABS
+    // ══════════════════════════════════════
+    function prinTab(tab) {
+      ['dashboard', 'inventory', 'add-book', 'checkouts', 'analytics', 'genres'].forEach(t => {
+        document.getElementById('prin-' + t).classList.toggle('hidden', t !== tab);
+        document.getElementById('prin-tab-' + t).classList.toggle('active', t === tab);
+      });
+      if (tab === 'inventory') renderPrinInventory();
+      if (tab === 'checkouts') renderPrinCheckouts();
+      if (tab === 'analytics') renderAnalytics();
+      if (tab === 'genres') renderGenresList();
+    }
+
+    function updatePrinDashboard() {
+      const available = inventoryCache.filter(b => b.available === 'Yes').length;
+      const active = checkoutsCache.filter(c => c.returned !== 'Yes');
+      const overdue = active.filter(c => daysFromNow(c.dueDate) < 0);
+
+      const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+      set('prin-stat-total', inventoryCache.length);
+      set('prin-stat-available', available);
+      set('prin-stat-checked', active.length);
+      set('prin-stat-overdue', overdue.length);
+
+      // Genre bars
+      const genreBarsEl = document.getElementById('prin-genre-bars');
+      if (genreBarsEl) {
+        const genreCount = {};
+        inventoryCache.forEach(b => {
+          splitSubgenres(b.subgenre).forEach(sg => {
+            genreCount[sg] = (genreCount[sg] || 0) + 1;
+          });
+        });
+        const max = Math.max(...Object.values(genreCount), 1);
+        const sorted = Object.entries(genreCount).sort((a, b) => b[1] - a[1]).slice(0, 8);
+        genreBarsEl.innerHTML = sorted.map(([sg, count]) => `
+      <div class="genre-bar-wrap">
+        <div class="genre-bar-label"><span>${sg}</span><span>${count}</span></div>
+        <div class="genre-bar-track"><div class="genre-bar-fill" style="width:${(count / max) * 100}%"></div></div>
+      </div>
+    `).join('');
+      }
+
+      // Overdue summary
+      const overdueEl = document.getElementById('prin-overdue-summary');
+      if (overdueEl) {
+        if (overdue.length === 0) {
+          overdueEl.innerHTML = '<p style="color:var(--text-light);font-size:13px;padding:8px 0;">No overdue books currently.</p>';
+        } else {
+          overdueEl.innerHTML = overdue.slice(0, 6).map(c => `
+        <div style="padding:9px 0;border-bottom:1px solid var(--parchment-dark);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:500;font-size:13px;">${sanitize(c.title)}</div>
+            <div style="font-size:12px;color:var(--text-light);">Roll: ${sanitize(c.rollNumber)}</div>
+          </div>
+          <span class="overdue-flag">${Math.abs(daysFromNow(c.dueDate))}d late</span>
+        </div>
+      `).join('');
+        }
+      }
+    }
+
+    function renderPrinInventory() {
+      const q = document.getElementById('prin-inv-search').value.toLowerCase();
+      const genre = document.getElementById('prin-inv-genre').value;
+      const subgenre = document.getElementById('prin-inv-subgenre').value;
+      const language = document.getElementById('prin-inv-language').value;
+
+      let books = inventoryCache.filter(b => {
+        if (q && !b.title.toLowerCase().includes(q) && !b.author.toLowerCase().includes(q)) return false;
+        if (genre && b.genre !== genre) return false;
+        if (subgenre && !subgenreIncludes(b.subgenre, subgenre)) return false;
+        if (language && b.language !== language) return false;
+        return true;
+      });
+
+      const tbody = document.getElementById('prin-inv-tbody');
+      tbody.innerHTML = books.length === 0
+        ? '<tr class="empty-row"><td colspan="9">No books found.</td></tr>'
+        : books.map((b, i) => {
+          const realIdx = inventoryCache.indexOf(b);
+          return `
+          <tr>
+            <td><code style="font-size:12px;">${sanitize(b.bookId)}</code></td>
+            <td style="font-weight:500;">${sanitize(b.title)}</td>
+            <td>${sanitize(b.author)}</td>
+            <td>${subgenreChips(b.subgenre)}</td>
+            <td>${sanitize(b.ageGroup || '—')}</td>
+            <td>${sanitize(b.language || '—')}</td>
+            <td>${conditionChip(b.condition)}</td>
+            <td>${b.available === 'Yes' ? '<span class="chip chip-available">Available</span>' : '<span class="chip chip-checked">Checked Out</span>'}</td>
+            <td style="white-space:nowrap;">
+              <button class="btn btn-outline btn-sm" onclick="openHistoryModal('${sanitize(b.bookId)}')" style="margin-right:6px;">History</button>
+              <button class="btn btn-outline btn-sm" onclick="openEditModal('${sanitize(b.bookId)}')" style="margin-right:6px;">Edit</button>
+              ${b.available === 'Yes' ? `<button class="btn btn-danger btn-sm" onclick="openRemoveModal(${realIdx})">Remove</button>` : '<span style="font-size:12px;color:var(--text-light);">Checked out</span>'}
+            </td>
+          </tr>
+        `;
+        }).join('');
+    }
+
+    function updatePrinInvSubgenre() {
+      const genre = document.getElementById('prin-inv-genre').value;
+      const sub = document.getElementById('prin-inv-subgenre');
+      sub.innerHTML = '<option value="">All Sub-genres</option>';
+      getAllSubgenresForFilter(genre).forEach(s => {
+        sub.innerHTML += `<option value="${sanitize(s)}">${sanitize(s)}</option>`;
+      });
+      renderPrinInventory();
+    }
+
+    function openRemoveModal(idx) {
+      bookToRemove = idx;
+      const b = inventoryCache[idx];
+      document.getElementById('remove-book-info').innerHTML = `<strong>${sanitize(b.title)}</strong><br><span style="font-size:12px;color:var(--text-light);">${sanitize(b.author)} · ${sanitize(b.bookId)}</span>`;
+      document.getElementById('remove-modal').classList.add('open');
+    }
+
+    function closeRemoveModal() {
+      document.getElementById('remove-modal').classList.remove('open');
+      bookToRemove = null;
+    }
+
+    async function confirmRemove() {
+      if (bookToRemove === null) return;
+      const b = inventoryCache[bookToRemove];
+      const btn = document.getElementById('confirm-remove-btn');
+
+      if (btn) btn.disabled = true;
+      try {
+        await sheetsDeleteRowById('Inventory', b.bookId);
+        inventoryCache.splice(bookToRemove, 1);
+        closeRemoveModal();
+        clearSubgenreFilterCache(); showToast(`"${b.title}" removed from catalogue.`, 'info');
+        // Reload to keep caches in sync with the server
+        await loadData({ force: true });
+        renderPrinInventory();
+        updatePrinDashboard();
+      } catch (e) {
+        showToast('Failed to remove book. Please try again.', 'error');
+        console.error(e);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function openEditModal(bookId) {
+      const b = inventoryCache.find(bk => bk.bookId === bookId);
+      if (!b) { showToast('Book not found.', 'error'); return; }
+
+      editingBookId = bookId;
+
+      document.getElementById('edit-modal-sub').textContent = `${b.bookId}`;
+      document.getElementById('edit-bookid-display').textContent = b.bookId;
+      document.getElementById('edit-title').value = b.title;
+      document.getElementById('edit-author').value = b.author;
+      document.getElementById('edit-genre').value = b.genre || 'Fiction';
+      populateAddSubgenreDropdown('edit');
+      // Load existing pipe-separated subgenres as chips
+      clearChips('edit');
+      splitSubgenres(b.subgenre).forEach(sg => addChipValue('edit', sg));
+      document.getElementById('edit-age').value = b.ageGroup || '';
+      document.getElementById('edit-condition').value = b.condition || '';
+      document.getElementById('edit-language').value = b.language || 'English';
+      document.getElementById('edit-error').classList.add('hidden');
+
+      // Reset banner then auto-fetch suggestions — result is cached so this is
+      // instant for books looked up before in the same session
+      const banner = document.getElementById('edit-gb-banner');
+      if (banner) {
+        banner.classList.add('hidden');
+        banner.innerHTML = '';
+      }
+
+      document.getElementById('edit-modal').classList.add('open');
+
+      // Fire after a short delay so the modal has rendered first
+      setTimeout(() => fetchGoogleBooks('edit'), 150);
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal').classList.remove('open');
+      editingBookId = null;
+    }
+
+    // populateEditSubgenre replaced by populateAddSubgenreDropdown('edit')
+
+    async function confirmEditBook() {
+      if (!editingBookId) return;
+      const b = inventoryCache.find(bk => bk.bookId === editingBookId);
+      if (!b) { showToast('Book not found.', 'error'); return; }
+
+      const title = document.getElementById('edit-title').value.trim();
+      const author = document.getElementById('edit-author').value.trim();
+      const genre = document.getElementById('edit-genre').value;
+      const subgenre = getChipValues('edit');  // pipe-joined multi-tag
+      const age = document.getElementById('edit-age').value;
+      const condition = document.getElementById('edit-condition').value;
+      const language = document.getElementById('edit-language').value;
+      const errEl = document.getElementById('edit-error');
+      const btn = document.getElementById('confirm-edit-btn');
+
+      errEl.classList.add('hidden');
+
+      if (!title || !author || !genre || !subgenre) {
+        errEl.textContent = 'Title, author, genre, and sub-genre are required.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      if (btn) btn.disabled = true;
+
+      // ── Optimistic update: reflect edited values immediately ──
+      const prevSnapshot = {
+        title: b.title, author: b.author, genre: b.genre,
+        subgenre: b.subgenre, ageGroup: b.ageGroup, condition: b.condition, language: b.language
+      };
+      b.title = title; b.author = author; b.genre = genre; b.subgenre = subgenre;
+      b.ageGroup = age; b.condition = condition; b.language = language;
+
+      closeEditModal();
+      showToast(`✓ "${title}" updated.`, 'success');
+
+      // Re-render immediately with the updated local cache
+      if (typeof renderPrinInventory === 'function' && !document.getElementById('prin-inventory')?.classList.contains('hidden')) {
+        renderPrinInventory();
+      }
+      if (typeof renderLibCatalogueTable === 'function' && !document.getElementById('lib-catalogue')?.classList.contains('hidden')) {
+        renderLibCatalogueTable();
+      }
+      updatePrinDashboard();
+      updateLibDashboard();
+
+      try {
+        await sheetsUpdateRowById('Inventory', b.bookId, [
+          b.bookId, title, author, genre, subgenre, b.available, age, condition, language
+        ]);
+        // Background sync — don't block the UI
+        loadData({ force: true });
+
+      } catch (e) {
+        // ── Rollback: revert to pre-edit values ──
+        Object.assign(b, prevSnapshot);
+        if (typeof renderPrinInventory === 'function') renderPrinInventory();
+        if (typeof renderLibCatalogueTable === 'function') renderLibCatalogueTable();
+        errEl.classList.remove('hidden');
+        errEl.textContent = 'Failed to save changes. Your edits have been reverted.';
+        console.error(e);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // populateAddSubgenre (single-select version) replaced by populateAddSubgenreDropdown + chip system
+
+    async function submitAddBook(prefix) {
+      prefix = prefix || 'add';
+      const title = document.getElementById(prefix + '-title').value.trim();
+      const author = document.getElementById(prefix + '-author').value.trim();
+      const genre = document.getElementById(prefix + '-genre').value;
+      const subgenre = getChipValues(prefix);  // pipe-joined multi-tag
+      const age = document.getElementById(prefix + '-age').value;
+      const condition = document.getElementById(prefix + '-condition').value;
+      const language = document.getElementById(prefix + '-language').value;
+      const errEl = document.getElementById(prefix + '-book-error');
+      const btn = document.getElementById(prefix + '-submit-btn');
+
+      errEl.classList.add('hidden');
+
+      if (!title || !author || !genre || !subgenre) {
+        errEl.textContent = 'Title, author, genre, and sub-genre are required.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      if (btn) btn.disabled = true;
+      try {
+        // bookId is generated server-side (live read of the sheet under a lock) and
+        // returned to us — this is what prevents two concurrent "Add Book" submissions
+        // from ever producing the same ID.
+        const result = await sheetsAppend('Inventory', ['', title, author, genre, subgenre, 'Yes', age, condition, language]);
+        const bookId = result.bookId;
+
+        // Reload from sheet so caches reflect the real, authoritative state
+        await loadData({ force: true });
+
+        clearSubgenreFilterCache(); showToast(`✓ "${title}" added with ID ${bookId}`, 'success');
+
+        document.getElementById(prefix + '-title').value = '';
+        document.getElementById(prefix + '-author').value = '';
+        document.getElementById(prefix + '-genre').value = '';
+        clearChips(prefix);
+        document.getElementById(prefix + '-age').value = '';
+        document.getElementById(prefix + '-condition').value = '';
+        document.getElementById(prefix + '-language').value = 'English';
+        if (prefix === 'add') updatePrinDashboard();
+        if (prefix === 'lib-ab') updateLibDashboard();
+
+      } catch (e) {
+        errEl.textContent = 'Failed to add book. Check your Apps Script URL and Sheet permissions.';
+        errEl.classList.remove('hidden');
+        console.error(e);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function renderPrinCheckouts() {
+      const q = document.getElementById('prin-co-search').value.toLowerCase();
+      const statusF = document.getElementById('prin-co-status').value;
+
+      let records = checkoutsCache.filter(c => {
+        if (q && !c.rollNumber.toLowerCase().includes(q) && !c.title.toLowerCase().includes(q)) return false;
+        const s = getStatus(c);
+        if (statusF && s !== statusF) return false;
+        return true;
+      }).sort((a, b) => (toDateOnly(b.checkoutDate) || 0) - (toDateOnly(a.checkoutDate) || 0));
+
+      const tbody = document.getElementById('prin-co-tbody');
+      tbody.innerHTML = records.length === 0
+        ? '<tr class="empty-row"><td colspan="6">No records found.</td></tr>'
+        : records.map(c => {
+          const s = getStatus(c);
+          const d = daysFromNow(c.dueDate);
+          return `
+          <tr>
+            <td style="font-weight:600;">${sanitize(c.rollNumber)}</td>
+            <td>${sanitize(c.title)}</td>
+            <td><code style="font-size:12px;">${sanitize(c.bookId)}</code></td>
+            <td>${formatDateShort(c.checkoutDate)}</td>
+            <td>${formatDateShort(c.dueDate)}</td>
+            <td>${statusChip(s, d)}</td>
+          </tr>
+        `;
+        }).join('');
+    }
+
+    function openHistoryModal(bookId) {
+      const book = inventoryCache.find(b => b.bookId === bookId);
+      if (!book) { showToast('Book not found.', 'error'); return; }
+
+      document.getElementById('history-modal-title').textContent = book.title;
+      document.getElementById('history-modal-sub').textContent = `${book.author} · ${book.bookId}`;
+
+      const history = checkoutsCache
+        .filter(c => c.bookId === bookId)
+        .sort((a, b) => (toDateOnly(b.checkoutDate) || 0) - (toDateOnly(a.checkoutDate) || 0));
+
+      const body = document.getElementById('history-modal-body');
+
+      if (!history.length) {
+        body.innerHTML = '<p style="color:var(--text-light);font-size:14px;padding:12px 0;text-align:center;">This book has never been checked out.</p>';
+      } else {
+        body.innerHTML = `
+      <table style="width:100%;font-size:13px;">
+        <thead>
+          <tr style="text-align:left;border-bottom:1px solid var(--border);">
+            <th style="padding:8px 6px;">Roll No.</th>
+            <th style="padding:8px 6px;">Checked Out</th>
+            <th style="padding:8px 6px;">Due Date</th>
+            <th style="padding:8px 6px;">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${history.map(c => {
+          const s = getStatus(c);
+          const d = daysFromNow(c.dueDate);
+          return `
+              <tr style="border-bottom:1px solid var(--parchment-dark);">
+                <td style="padding:8px 6px;font-weight:600;">${sanitize(c.rollNumber)}</td>
+                <td style="padding:8px 6px;">${formatDateShort(c.checkoutDate)}</td>
+                <td style="padding:8px 6px;">${formatDateShort(c.dueDate)}</td>
+                <td style="padding:8px 6px;">${statusChip(s, d)}</td>
+              </tr>
+            `;
+        }).join('')}
+        </tbody>
+      </table>
+      <p style="margin-top:14px;font-size:12px;color:var(--text-light);">Total times checked out: ${history.length}</p>
+    `;
+      }
+
+      document.getElementById('history-modal').classList.add('open');
+    }
+
+    function closeHistoryModal() {
+      document.getElementById('history-modal').classList.remove('open');
+    }
+
+    function exportCheckoutsCSV() {
+      const q = document.getElementById('prin-co-search').value.toLowerCase();
+      const statusF = document.getElementById('prin-co-status').value;
+
+      let records = checkoutsCache.filter(c => {
+        if (q && !c.rollNumber.toLowerCase().includes(q) && !c.title.toLowerCase().includes(q)) return false;
+        const s = getStatus(c);
+        if (statusF && s !== statusF) return false;
+        return true;
+      }).sort((a, b) => (toDateOnly(b.checkoutDate) || 0) - (toDateOnly(a.checkoutDate) || 0));
+
+      if (!records.length) { showToast('No records to export.', 'error'); return; }
+
+      const headers = ['Roll Number', 'Book Title', 'Book ID', 'Checkout Date', 'Due Date', 'Status'];
+      const csvEscape = (val) => {
+        let s = String(val ?? '');
+        // Guard against CSV/spreadsheet formula injection: if a value starts with
+        // =, +, -, or @, Excel/Sheets may interpret it as a formula when the file
+        // is opened. Prefixing with an apostrophe forces it to be read as text.
+        if (/^[=+\-@]/.test(s)) {
+          s = "'" + s;
+        }
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      };
+
+      const rows = records.map(c => {
+        const s = getStatus(c);
+        const label = s === 'returned' ? 'Returned' : s === 'overdue' ? 'Overdue' : 'Active';
+        return [c.rollNumber, c.title, c.bookId, c.checkoutDate, c.dueDate, label].map(csvEscape).join(',');
+      });
+
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const today = todayISO();
+      a.href = url;
+      a.download = `checkout-records-${today}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast(`Exported ${records.length} record(s) to CSV.`, 'success');
+    }
+
+    function renderAnalytics() {
+      // Checkouts by genre
+      const byGenre = {};
+      checkoutsCache.forEach(c => {
+        const book = inventoryCache.find(b => b.bookId === c.bookId);
+        if (!book) return;
+        const sg = book.subgenre;
+        byGenre[sg] = (byGenre[sg] || 0) + 1;
+      });
+      const maxG = Math.max(...Object.values(byGenre), 1);
+      const sortedG = Object.entries(byGenre).sort((a, b) => b[1] - a[1]);
+      document.getElementById('analytics-genre-bars').innerHTML = sortedG.length === 0
+        ? '<p style="color:var(--text-light);font-size:13px;">No checkout data yet.</p>'
+        : sortedG.map(([sg, count]) => `
+        <div class="genre-bar-wrap">
+          <div class="genre-bar-label"><span>${sg}</span><span>${count} checkouts</span></div>
+          <div class="genre-bar-track"><div class="genre-bar-fill" style="width:${(count / maxG) * 100}%"></div></div>
+        </div>
+      `).join('');
+
+      // Top books
+      const byBook = {};
+      checkoutsCache.forEach(c => { byBook[c.title] = (byBook[c.title] || 0) + 1; });
+      const topBooks = Object.entries(byBook).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      document.getElementById('analytics-top-books').innerHTML = topBooks.length === 0
+        ? '<p style="color:var(--text-light);font-size:13px;">No data yet.</p>'
+        : topBooks.map(([title, count], i) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--parchment-dark);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:12px;font-weight:700;color:var(--text-light);min-width:20px;">${i + 1}</span>
+            <span style="font-size:13px;font-weight:500;">${title}</span>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:var(--navy);">${count}×</span>
+        </div>
+      `).join('');
+
+      // Top students
+      const byStudent = {};
+      checkoutsCache.forEach(c => { byStudent[c.rollNumber] = (byStudent[c.rollNumber] || 0) + 1; });
+      const topStudents = Object.entries(byStudent).sort((a, b) => b[1] - a[1]).slice(0, 8);
+      document.getElementById('analytics-top-students').innerHTML = topStudents.length === 0
+        ? '<p style="color:var(--text-light);font-size:13px;">No data yet.</p>'
+        : topStudents.map(([roll, count], i) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--parchment-dark);">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:12px;font-weight:700;color:var(--text-light);min-width:20px;">${i + 1}</span>
+            <span style="font-size:13px;font-weight:600;">${roll}</span>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:var(--navy);">${count} books</span>
+        </div>
+      `).join('');
+
+      // Monthly trend
+      const byMonth = {};
+      checkoutsCache.forEach(c => {
+        const m = c.checkoutDate.substring(0, 7);
+        byMonth[m] = (byMonth[m] || 0) + 1;
+      });
+      const months = Object.entries(byMonth).sort((a, b) => a[0].localeCompare(b[0])).slice(-6);
+      const maxM = Math.max(...months.map(m => m[1]), 1);
+      document.getElementById('analytics-monthly').innerHTML = months.length === 0
+        ? '<p style="color:var(--text-light);font-size:13px;">No data yet.</p>'
+        : months.map(([month, count]) => `
+        <div class="genre-bar-wrap">
+          <div class="genre-bar-label"><span>${month}</span><span>${count}</span></div>
+          <div class="genre-bar-track"><div class="genre-bar-fill" style="width:${(count / maxM) * 100}%"></div></div>
+        </div>
+      `).join('');
+    }
+
+    // ══════════════════════════════════════
+    // GENRE MANAGEMENT
+    // ══════════════════════════════════════
+    function renderGenresList() {
+      const all = { ...DEFAULT_GENRES };
+      genresCache.forEach(g => {
+        if (!all[g.genre]) all[g.genre] = [];
+        if (!all[g.genre].includes(g.subgenre)) all[g.genre].push(g.subgenre);
+      });
+
+      document.getElementById('genres-list').innerHTML = Object.entries(all).map(([genre, subs]) => `
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text-mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">${genre}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${subs.map(s => `<span class="chip" style="background:var(--parchment-dark);color:var(--text-dark);">${s}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+    }
+
+    // Mirrors the server-side check in code.gs's validateGenreText() — letters,
+    // numbers, and spaces only, 2-40 chars. Client-side validation is just for a
+    // fast, friendly error message; the server re-validates independently since
+    // a client check alone can always be bypassed via devtools.
+    const GENRE_NAME_PATTERN = /^[a-zA-Z0-9 \/'&.\-]{2,40}$/;  // allows / ' & . -
+
+    async function addGenre() {
+      const parent = document.getElementById('genre-parent').value;
+      const name = document.getElementById('genre-new-name').value.trim();
+      const btn = document.getElementById('add-genre-btn');
+
+      if (!name) { showToast('Please enter a sub-genre name.', 'error'); return; }
+      if (!GENRE_NAME_PATTERN.test(name)) {
+        showToast('Sub-genre names can only contain letters, numbers, spaces, and / \' & . -', 'error');
+        return;
+      }
+
+      const existing = getSubgenresForGenre(parent);
+      if (existing.includes(name)) { showToast('This sub-genre already exists.', 'error'); return; }
+
+      if (btn) btn.disabled = true;
+      try {
+        await scriptCall({ action: 'addGenre', genre: parent, subgenre: name });
+        genresCache.push({ genre: parent, subgenre: name });
+        document.getElementById('genre-new-name').value = '';
+        showToast(`✓ "${name}" added under ${parent}.`, 'success');
+        renderGenresList();
+      } catch (e) {
+        showToast(e.message || 'Failed to save genre. Check Sheet permissions.', 'error');
+        console.error(e);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+
+</html>
