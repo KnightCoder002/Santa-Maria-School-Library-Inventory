@@ -17,7 +17,7 @@ See DEPLOY.md for the full step-by-step guide.
 - Optional: drop a photo at `public/school.jpg` (about 1600px wide, under 300 KB) and it appears faintly behind the landing page.
 - Existing data: nothing is rewritten. Only blank `ContainedWorks`/`ISBN` headers are added; any `Available` value other than `No` counts as available, as in your old app.
 - Camera scanning needs HTTPS (Vercel provides it) and camera permission.
-- Reports: the first report creates a `Reports` tab in your Sheet. The principal sees them under Reports in the app and can mark them resolved.
+- Reports go to a `Reports` tab and are read only by the Owner login. Reading lists are stored in a `Lists` tab (roll number + PIN).
 - Quotes: add your own in `src/quotes.js`. The card stays hidden while the list is empty.
 - Themes (Paper, Night, Bento) and text size live under the Display button. `photos/` holds an unused, unrotated copy of the school photo.
 - Offline: books scanned without a connection are kept on the phone and sent automatically when it is back online.

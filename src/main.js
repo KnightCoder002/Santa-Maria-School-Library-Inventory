@@ -9,6 +9,7 @@ const esc = s => String(s ?? '').replace(/[&<>"'`]/g, c => ({ '&': '&amp;', '<':
 const LOAN_LIMIT = 3; // warning only, never blocks. Change to your policy.
 const FILL = ' fill="currentColor" fill-opacity=".22"';
 const P = {
+  chevron: `<path d="m6 9 6 6 6-6"/>`,
   home: `<path d="M3.5 11 12 4l8.5 7V20h-17z"${FILL}/><path d="M10 20v-5.5h4V20"/>`,
   out: `<rect x="3.5" y="12" width="17" height="8" rx="2"${FILL}/><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8"/>`,
   ledger: `<rect x="5" y="3.5" width="14" height="17" rx="2"${FILL}/><path d="M8.5 8.5h7M8.5 12.5h7M8.5 16.5h4"/>`,
@@ -37,7 +38,8 @@ const CAT_MAP = [['mystery', 'Mystery'], ['detective', 'Mystery'], ['science fic
 const ROLES = {
   student: { icon: '', get name() { return tr('role_student'); }, get desc() { return tr('desc_student'); } },
   librarian: { icon: '', get name() { return tr('role_librarian'); }, get desc() { return tr('desc_librarian'); } },
-  principal: { icon: '', get name() { return tr('role_principal'); }, get desc() { return tr('desc_principal'); } }
+  principal: { icon: '', get name() { return tr('role_principal'); }, get desc() { return tr('desc_principal'); } },
+  admin: { icon: '', get name() { return tr('role_admin'); }, get desc() { return tr('desc_admin'); } }
 };
 const TABS = {
   student: [['catalogue', 'tab_cat', 'books'], ['list', 'tab_list', 'heart']],
@@ -45,12 +47,12 @@ const TABS = {
 };
 
 const store = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
-const S = { role: null, tab: 'catalogue', books: [], checkouts: [], genres: [], q: '', avail: '', sg: '', lng: '', age: '', editId: null, theme: store.get('theme', 'bento'), big: store.get('big', false), display: false, loading: false, lang: store.get('lang', 'en'), list: store.get('list', []), surprise: null, report: null, reports: [], canInstall: false, cq: '', rq: '', roll: '', days: 14, pick: null,
+const S = { role: null, tab: 'catalogue', books: [], checkouts: [], genres: [], q: '', avail: '', sg: '', fg: [], fs: [], open: null, more: false, lng: '', age: '', editId: null, theme: store.get('theme2', 'light'), display: false, loading: false, list: [], me: null, listLogin: null, surprise: null, report: null, reports: [], canInstall: false, cq: '', rq: '', roll: '', days: 14, pick: null,
   login: null, confirm: null, scanning: false, draft: null, results: [], sticky: { genre: 'Fiction', age: '', cond: 'Good', lang: 'English' } };
 
 const isStaff = () => S.role && S.role !== 'student';
-const tabsFor = () => S.role === 'student' ? TABS.student : S.role === 'principal' ? [...TABS.staff, ['analytics', 'Stats', 'chart'], ['genres', 'Genres', 'tag'], ['reports', 'Reports' + (S.reports.filter(r => r.Status !== 'Resolved').length ? ` (${S.reports.filter(r => r.Status !== 'Resolved').length})` : ''), 'flag']] : TABS.staff;
-const tr = k => ((isStaff() ? T.en : T[S.lang] || T.en)[k]) ?? T.en[k] ?? k;
+const tabsFor = () => S.role === 'student' ? TABS.student : S.role === 'admin' ? [['reports', 'Reports', 'flag']] : S.role === 'principal' ? [...TABS.staff.filter(x => x[0] !== 'checkout'), ['analytics', 'Stats', 'chart'], ['genres', 'Genres', 'tag']] : TABS.staff;
+const tr = k => T.en[k] ?? k;
 const subs = g => [...new Set([...(g === 'Fiction' ? FIC : NF), ...S.genres.filter(x => x.Genre === g).map(x => x.SubGenre)])];
 const norm = s => String(s || '').toLowerCase().replace(/[\u0300-\u036f]/g, '').replace(/(\d)-(?=\d)/g, '$1').replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
 const lev = (a, b) => { if (Math.abs(a.length - b.length) > 2) return 3; let p = Array.from({ length: b.length + 1 }, (_, i) => i); for (let i = 1; i <= a.length; i++) { const c = [i]; for (let j = 1; j <= b.length; j++) c[j] = Math.min(p[j] + 1, c[j - 1] + 1, p[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); p = c; } return p[b.length]; };
@@ -100,9 +102,9 @@ const bookList = () => {
   const ul = (inner, cls = '') => `<ul class="grid gap-3 sm:grid-cols-2 ${cls}">${inner}</ul>`;
   if (S.loading) return ul(Array.from({ length: 6 }, () => '<li class="card h-24 animate-pulse bg-stone-100"></li>').join(''));
   const q = S.q.toLowerCase().trim();
-  const rows = S.books.filter(b => matches(b, q) && (!S.avail || b.Available === S.avail) && (!S.sg || String(b.SubGenre || '').split('|').includes(S.sg)) && (!S.lng || b.Language === S.lng) && (!S.age || b.AgeGroup === S.age)).slice(0, 400);
+  const rows = S.books.filter(b => matches(b, q) && (!S.avail || b.Available === S.avail) && (!S.fg.length || S.fg.includes(b.Genre)) && (!S.fs.length || S.fs.some(x => String(b.SubGenre || '').split('|').includes(x))) && (!S.lng || b.Language === S.lng) && (!S.age || b.AgeGroup === S.age)).slice(0, 400);
   if (!rows.length) return ul(noMatch());
-  const acts = b => (S.role === 'student' ? favBtn(b) : '') + (isStaff() ? `<button class="btn !px-2.5 !py-1 text-xs" data-act="edit" data-id="${esc(b.BookID)}">Edit</button>` : '') + (S.role === 'principal' && b.Available === 'Yes' ? `<button class="btn-red !px-2.5 !py-1 text-xs" data-act="ask-remove" data-id="${esc(b.BookID)}">Remove</button>` : '');
+  const acts = b => (S.role === 'student' ? favBtn(b) : '') + (isStaff() ? `<button class="btn !px-2.5 !py-1 text-xs" data-act="edit" data-tip="Edit this book" data-id="${esc(b.BookID)}">Edit</button>` : '') + (S.role === 'principal' && b.Available === 'Yes' ? `<button class="btn-red !px-2.5 !py-1 text-xs" data-act="ask-remove" data-tip="Remove this book from the library" data-id="${esc(b.BookID)}">Remove</button>` : '');
   const cards = rows.map(b => bookCard(b, acts(b))).join('');
   if (!isStaff()) return ul(cards);
   // Staff on a desktop get a dense table; phones and tablets get the cards.
@@ -115,25 +117,24 @@ const checkoutList = () => {
   const q = S.cq.toLowerCase().trim();
   if (!q) return empty('Type a title or author to find a book.');
   const rows = S.books.filter(b => b.Available === 'Yes' && matches(b, q)).slice(0, 30);
-  return rows.length ? rows.map(b => bookCard(b, `<button class="btn-gold !py-1 text-xs" data-act="pick" data-id="${esc(b.BookID)}">Select</button>`)).join('') : empty('No available copy found.');
+  return rows.length ? rows.map(b => bookCard(b, `<button class="btn-gold !py-1 text-xs" data-act="pick" data-tip="Choose this book" data-id="${esc(b.BookID)}">Select</button>`)).join('') : empty('No available copy found.');
 };
 const recordList = () => {
   const q = S.rq.toLowerCase().trim();
   const rows = S.checkouts.filter(c => !q || c.RollNumber.toLowerCase().includes(q) || c.Title.toLowerCase().includes(q)).sort((a, b) => b.CheckoutDate.localeCompare(a.CheckoutDate)).slice(0, 300);
   if (!rows.length) return `<ul class="grid gap-3">${empty('No records yet.')}</ul>`;
   const chip = c => { const st = state(c), d = daysLeft(c.DueDate); return st === 'returned' ? '<span class="pill">Returned</span>' : st === 'overdue' ? `<span class="pill bad">${-d}d overdue</span>` : `<span class="pill ${d <= 3 ? 'warn' : 'ok'}">Due in ${d}d</span>`; };
-  const ret = c => state(c) !== 'returned' ? `<button class="btn-gold !min-h-9 !py-1 text-xs" data-act="return" data-id="${esc(c.CheckoutID)}">Return</button>` : '';
+  const ret = c => state(c) !== 'returned' ? `<button class="btn-gold !min-h-9 !py-1 text-xs" data-act="return" data-tip="Mark this book as returned" data-id="${esc(c.CheckoutID)}">Return</button>` : '';
   const cards = rows.map(c => `<li class="card flex items-center justify-between gap-3"><div class="min-w-0"><p class="font-bold text-navy">${esc(c.Title)}</p><p class="text-sm text-slate-500">Roll ${esc(c.RollNumber)}, out ${showDate(c.CheckoutDate)}, due ${showDate(c.DueDate)}</p></div><div class="flex flex-col items-end gap-2">${chip(c)}${ret(c)}</div></li>`).join('');
   const td = 'px-3 py-2';
   const trs = rows.map(c => `<tr class="border-b border-stone-100"><td class="${td} font-bold">${esc(c.RollNumber)}</td><td class="${td}">${esc(c.Title)}</td><td class="${td} font-mono text-xs">${esc(c.BookID)}</td><td class="${td}">${showDate(c.CheckoutDate)}</td><td class="${td}">${showDate(c.DueDate)}</td><td class="${td}">${chip(c)}</td><td class="${td} text-right">${ret(c)}</td></tr>`).join('');
   return `<ul class="grid gap-3 lg:hidden">${cards}</ul><div class="card hidden overflow-x-auto !p-0 lg:block"><table class="w-full text-left text-sm"><thead class="bg-ink text-white"><tr>${['Roll no.', 'Book', 'Book ID', 'Checked out', 'Due', 'Status', ''].map(h => `<th class="px-3 py-2.5 font-bold">${h}</th>`).join('')}</tr></thead><tbody>${trs}</tbody></table></div>`;
 };
 
-const favBtn = (b, c = '!px-2.5 !py-1 text-xs') => `<button class="btn ${c}" data-act="fav" data-id="${esc(b.BookID)}">${ic('heart', 'h-4 w-4', S.list.includes(b.BookID))} ${S.list.includes(b.BookID) ? tr('saved') : tr('save')}</button>`;
-const noMatch = () => `<li class="card col-span-full text-center text-slate-600">${tr('nomatch')}<br><button class="btn mt-3" data-act="report-open" data-id="t_missing">${ic('flag')} ${tr('report')}</button></li>`;
-const langBar = () => `<div class="flex gap-1">${[['en', 'EN'], ['ta', 'தமிழ்'], ['hi', 'हिन्दी']].map(([k, l]) => `<button data-act="lang" data-id="${k}" class="rounded-md px-2 py-1 text-xs ${S.lang === k ? 'bg-gold font-semibold text-navy' : 'border border-white/20 text-white/70'}">${l}</button>`).join('')}</div>`;
+const favBtn = (b, c = '!px-2.5 !py-1 text-xs') => `<button class="btn ${c}" data-act="fav" data-tip="Save to, or remove from, my reading list" data-id="${esc(b.BookID)}">${ic('heart', 'h-4 w-4', S.list.includes(b.BookID))} ${S.list.includes(b.BookID) ? tr('saved') : tr('save')}</button>`;
+const noMatch = () => `<li class="card col-span-full text-center text-slate-600">${tr('nomatch')}<br><button class="btn mt-3" data-act="report-open" data-tip="Report a problem or a missing book" data-id="t_missing">${ic('flag')} ${tr('report')}</button></li>`;
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-const installBlock = () => standalone() ? '' : S.canInstall ? `<div class="mt-8 text-center"><button class="btn-gold" data-act="install">${ic('install')} ${tr('install')}</button></div>` : /iphone|ipad|ipod/i.test(navigator.userAgent) ? `<p class="mt-8 text-center text-sm text-white/60">${tr('iosHint')}</p>` : '';
+const installBlock = () => standalone() ? '' : S.canInstall ? `<div class="mt-8 text-center"><button class="btn-gold" data-act="install" data-tip="Add this site to your home screen">${ic('install')} ${tr('install')}</button></div>` : /iphone|ipad|ipod/i.test(navigator.userAgent) ? `<p class="mt-8 text-center text-sm text-white/60">${tr('iosHint')}</p>` : '';
 const daySeed = () => { const d = new Date(); return d.getFullYear() * 400 + d.getMonth() * 32 + d.getDate(); };
 const TILES = ['tile-b', 'tile-c', 'tile-a', 'tile-e'];
 const discover = () => {
@@ -144,21 +145,30 @@ const discover = () => {
   return `<section class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
     <div class="card tile-e relative col-span-2 flex flex-col justify-between gap-8 overflow-hidden sm:col-span-4 sm:flex-row sm:items-end"><img src="/school.jpg" alt="" onerror="this.remove()" class="absolute inset-0 h-full w-full object-cover opacity-20">
       <div class="relative"><h2 class="font-display text-4xl leading-tight sm:text-6xl">${tr('hero')}</h2><p class="mt-2 text-white/80">${S.books.length} ${tr('booksWord')}, ${open.length} ${tr('availnow')}</p></div>
-      <button data-act="surprise" class="btn-gold relative shrink-0">${ic('dice')} ${tr('surprise')}</button></div>
+      <button data-act="surprise" data-tip="Pick a random available book for me" class="btn-gold relative shrink-0">${ic('dice')} ${tr('surprise')}</button></div>
     ${b ? `<div class="card tile-d ${qq ? 'col-span-2' : 'col-span-2 sm:col-span-4'}"><h2 class="font-display text-xl">${tr('bod')}</h2><p class="font-display mt-3 text-3xl leading-tight">${esc(b.Title)}</p><p class="mt-1">${esc(b.Author)}</p><div class="mt-3 flex flex-wrap gap-1">${sgs}<span class="pill ok">${tr('availnow')}</span></div></div>` : ''}
     ${qq ? `<div class="card tile-a col-span-2"><h2 class="font-display text-xl">${tr('quote')}</h2><p class="mt-3 text-lg leading-snug">${esc(qq[0])}</p><p class="mt-2 text-sm text-white/80">${esc(qq[1])}</p></div>` : ''}
     ${genres.map(([g, n], i) => `<button data-act="sg" data-id="${esc(g)}" class="card ${TILES[i % 4]} flex min-h-28 flex-col justify-between text-left"><span class="font-display text-2xl leading-tight">${esc(g)}</span><span class="text-sm">${n} ${tr('booksWord')}</span></button>`).join('')}
-    ${S.role === 'student' ? `<button data-act="tab" data-id="list" class="card tile-d flex min-h-28 flex-col justify-between text-left">${ic('heart', 'h-8 w-8')}<span class="font-display text-2xl">${tr('tab_list')} (${S.list.length})</span></button>` : ''}</section>`;
+    ${S.role === 'student' ? `<button data-act="tab" data-id="list" data-tip="See the books I saved" class="card tile-d flex min-h-28 flex-col justify-between text-left">${ic('heart', 'h-8 w-8')}<span class="font-display text-2xl">${tr('tab_list')}${S.me ? ' (' + S.list.length + ')' : ''}</span></button>` : ''}</section>`;
+};
+const tabTip = id => ({ dashboard: 'Overview of today', checkout: 'Lend a book to a student or teacher', records: 'All checkouts and returns', catalogue: 'Browse and search all books', add: 'Add new books by scanning or typing', analytics: 'Charts and statistics', genres: 'Add genres and sub-genres', reports: 'Problems reported by users', list: 'Books I saved' })[id] || '';
+const toggle = (a, x) => a.includes(x) ? a.filter(y => y !== x) : [...a, x];
+const subOptions = () => [...new Set(S.books.filter(b => !S.fg.length || S.fg.includes(b.Genre)).flatMap(b => String(b.SubGenre || '').split('|').filter(Boolean)))].sort();
+const keepScroll = () => { const t = document.querySelector('[id^="dd-"]')?.scrollTop || 0; return () => { const e = document.querySelector('[id^="dd-"]'); if (e) e.scrollTop = t; }; };
+const dd = (key, label, items, sel) => `<div class="sm:relative"><button class="btn !min-h-10 ${sel.length ? '!bg-gold !text-ink' : ''}" data-act="dd" data-id="${key}" data-tip="Choose one or more ${label.toLowerCase()}s" aria-expanded="${S.open === key}">${label}${sel.length ? ' (' + sel.length + ')' : ''}${ic('chevron', 'h-4 w-4')}</button>${S.open === key ? `<div id="dd-${key}" class="absolute inset-x-0 z-30 mt-2 max-h-72 overflow-y-auto rounded-xl border-2 border-stone-300 bg-surface p-2 shadow-lg sm:inset-x-auto sm:left-0 sm:w-72">${items.length ? items.map(x => `<label class="flex min-h-10 cursor-pointer items-center gap-3 rounded-lg px-2 hover:bg-stone-100"><input type="checkbox" class="h-5 w-5" style="accent-color:#c9a84c" data-act="${key === 'g' ? 'fg' : 'fs'}" data-id="${esc(x)}" ${sel.includes(x) ? 'checked' : ''}>${esc(x)}</label>`).join('') : '<p class="p-2 text-sm text-slate-500">Nothing to choose yet.</p>'}</div>` : ''}</div>`;
+const filterBar = () => {
+  const genres = [...new Set(S.books.map(b => b.Genre).filter(Boolean))].sort(), any = S.fg.length || S.fs.length || S.lng || S.age || S.avail;
+  const sel = (id, label, opts, cur) => `<select id="${id}" class="input !min-h-10 !w-auto !py-1.5 text-sm" aria-label="${label}"><option value="">${label}: all</option>${opts.map(o => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+  return `<div class="relative mt-2 flex flex-wrap items-center gap-2">${dd('g', 'Genre', genres, S.fg)}${dd('s', 'Sub-genre', subOptions(), S.fs)}<button class="btn !min-h-10" data-act="more" data-tip="Show language and age group filters" aria-expanded="${S.more}">More filters${ic('chevron', 'h-4 w-4')}</button>${any ? '<button class="btn !min-h-10" data-act="clear-all" data-tip="Remove every filter">Clear all</button>' : ''}</div>${S.more ? `<div class="mt-2 flex flex-wrap gap-2">${sel('lng-sel', 'Language', LANGS, S.lng)}${sel('age-sel', 'Age group', AGES, S.age)}</div>` : ''}`;
 };
 const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const spark = v => { const mx = Math.max(1, ...v), pts = v.map((n, i) => `${(i / (v.length - 1)) * 120},${36 - (n / mx) * 32}`).join(' '); return `<svg viewBox="0 0 120 40" class="h-12 w-32 text-gold" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><polyline points="${pts}"/></svg>`; };
 const strip = (title, books) => books.length ? `<section class="mb-6"><h2 class="font-display mb-2 text-2xl text-navy">${title}</h2><ul class="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">${books.map(b => `<li class="card w-44 shrink-0 !p-3"><p class="line-clamp-2 font-bold text-navy">${esc(b.Title)}</p><p class="line-clamp-1 text-sm text-slate-500">${esc(b.Author)}</p><span class="pill mt-2 ${b.Available === 'Yes' ? 'ok' : 'warn'}">${b.Available === 'Yes' ? tr('available') : tr('out')}</span></li>`).join('')}</ul></section>` : '';
 const strips = () => strip(tr('newArr'), S.books.slice(-8).reverse()) + strip(tr('mostB'), S.books.filter(b => +b.Borrows > 0).sort((a, b) => b.Borrows - a.Borrows).slice(0, 8));
-const chipRow = (act, items, cur) => items.length > 1 ? `<div class="mt-2 flex gap-2 overflow-x-auto pb-1" role="group">${['', ...items].map(s => `<button data-act="${act}" data-id="${esc(s)}" aria-pressed="${cur === s}" class="pill shrink-0 !min-h-9 !px-3 !py-1.5 ${cur === s ? 'bg-ink text-white' : ''}">${s ? esc(s) : tr('all')}</button>`).join('')}</div>` : '';
 const neverBorrowed = () => { const seen = new Set(S.checkouts.map(c => c.BookID)); return S.books.filter(b => !seen.has(b.BookID)); };
 const loansOf = r => S.checkouts.filter(c => r && c.RollNumber === r && c.Returned !== 'Yes');
 const loansBox = () => { const r = S.roll.trim(), l = loansOf(r); if (!r) return ''; const over = l.filter(c => daysLeft(c.DueDate) < 0).length; return `<div class="card mb-4 ${over || l.length >= LOAN_LIMIT ? 'border-2 border-red-600' : ''}"><p class="font-bold text-navy">Roll ${esc(r)} has ${l.length} ${l.length === 1 ? 'book' : 'books'} out${over ? `, ${over} overdue` : ''}</p>${l.map(c => `<p class="text-sm text-slate-500">${esc(c.Title)}, due ${showDate(c.DueDate)}</p>`).join('')}</div>`; };
-const recentRolls = () => { const r = store.get('rolls', []); return r.length ? `<div class="mb-3 flex flex-wrap gap-2">${r.map(x => `<button class="pill !min-h-9 !px-3" data-act="roll" data-id="${esc(x)}">${esc(x)}</button>`).join('')}</div>` : ''; };
+const recentRolls = () => { const r = store.get('rolls', []); return r.length ? `<div class="mb-3 flex flex-wrap gap-2">${r.map(x => `<button class="pill !min-h-9 !px-3" data-act="roll" data-tip="Use this roll number" data-id="${esc(x)}">${esc(x)}</button>`).join('')}</div>` : ''; };
 const overdueText = () => { const by = {}; S.checkouts.filter(c => state(c) === 'overdue').forEach(c => (by[c.RollNumber] ||= []).push(c)); return Object.entries(by).map(([r, l]) => `Roll ${r}: ` + l.map(c => `${c.Title} (due ${showDate(c.DueDate)}, ${-daysLeft(c.DueDate)} days late)`).join('; ')).join('\n'); };
 const queued = () => store.get('queue', []);
 async function syncQueue() {
@@ -166,15 +176,13 @@ async function syncQueue() {
   try { while (q.length) { await api('addBook', { book: q[0] }); q = q.slice(1); store.set('queue', q); } toast('Saved books synced.', 'success'); await load(); render(); } catch {}
 }
 
-const sgChipsOld = () => { const all = [...new Set(S.books.flatMap(b => String(b.SubGenre || '').split('|').filter(Boolean)))].sort(); return all.length ? `<div class="mt-2 flex gap-2 overflow-x-auto pb-1">${['', ...all].map(s => `<button data-act="sg" data-id="${esc(s)}" class="pill shrink-0 !px-3 !py-1.5 ${S.sg === s ? 'bg-ink text-white' : ''}">${s ? esc(s) : tr('all')}</button>`).join('')}</div>` : ''; };
-const sgChips = () => chipRow('sg', [...new Set(S.books.flatMap(b => String(b.SubGenre || '').split('|').filter(Boolean)))].sort(), S.sg) + chipRow('lng', LANGS, S.lng) + chipRow('age', AGES, S.age);
 const tally = a => { const m = {}; a.forEach(k => { if (k) m[k] = (m[k] || 0) + 1; }); return Object.entries(m).sort((x, y) => y[1] - x[1]).slice(0, 8); };
 const bars = rows => { const mx = Math.max(1, ...rows.map(r => r[1])); return rows.length ? rows.map(([k, n]) => `<div class="mb-2"><div class="flex justify-between gap-2 text-sm"><span class="truncate">${esc(k)}</span><span>${n}</span></div><div class="h-2 rounded bg-stone-100"><div class="h-2 rounded bg-ink" style="width:${n / mx * 100}%"></div></div></div>`).join('') : '<p class="text-sm text-slate-500">No data yet.</p>'; };
 
 const views = {
-  catalogue: () => `${!S.q && !S.avail && !S.sg && !S.lng && !S.age ? discover() + strips() : ''}<div class="flex items-center justify-between gap-3"><h1 class="h1">${S.role === 'student' ? tr('title') : 'Books'}</h1></div>
+  catalogue: () => `${!S.q && !S.avail && !S.fg.length && !S.fs.length && !S.lng && !S.age ? discover() + strips() : ''}<div class="flex items-center justify-between gap-3"><h1 class="h1">${S.role === 'student' ? tr('title') : 'Books'}</h1></div>
     <div class="sticky top-14 z-10 -mx-4 bg-parchment/95 px-4 py-2 sm:static sm:mx-0 sm:px-0"><div class="flex gap-2"><input id="q" class="input flex-1" placeholder="${esc(tr('search'))}" value="${esc(S.q)}">
-    <select id="avail" class="input !w-auto"><option value="">${tr('all')}</option><option value="Yes" ${S.avail === 'Yes' ? 'selected' : ''}>${tr('available')}</option><option value="No" ${S.avail === 'No' ? 'selected' : ''}>${tr('out')}</option></select></div>${sgChips()}</div>
+    <select id="avail" class="input !w-auto"><option value="">${tr('all')}</option><option value="Yes" ${S.avail === 'Yes' ? 'selected' : ''}>${tr('available')}</option><option value="No" ${S.avail === 'No' ? 'selected' : ''}>${tr('out')}</option></select></div>${filterBar()}</div>
     <div id="list" class="mt-2">${bookList()}</div>`,
 
   dashboard: () => {
@@ -186,14 +194,15 @@ const views = {
     const month = tally(S.checkouts.map(x => x.CheckoutDate.slice(0, 7))).sort((a, b) => a[0].localeCompare(b[0]));
     return `<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <div class="card col-span-2 flex flex-col justify-between gap-4"><div><h1 class="h1">Today at the library</h1><p class="text-slate-500">${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</p></div>
-        <div class="flex flex-wrap gap-2"><button class="btn-gold" data-act="tab" data-id="checkout">${ic('out')} Check out</button><button class="btn" data-act="tab" data-id="add">${ic('scan')} Add books</button></div></div>
+        <div class="flex flex-wrap gap-2">${S.role === 'librarian' ? `<button class="btn-gold" data-act="tab" data-id="checkout" data-tip="Go to the check out screen">${ic('out')} Check out</button>` : ''}<button class="btn" data-act="tab" data-id="add" data-tip="Go to add books">${ic('scan')} Add books</button></div></div>
       <div class="card col-span-2"><p class="text-sm font-bold text-slate-600">Checkouts, last 14 days</p><div class="mt-3 flex items-end justify-between gap-3"><p class="font-display text-5xl font-bold">${days.reduce((a, b) => a + b, 0)}</p>${spark(days)}</div></div>
       ${stat(S.books.length, 'Books')}${stat(act.length, 'Checked out')}${stat(soon.length, 'Due in 3 days', 'text-amber-700')}${stat(over.length, 'Overdue', 'text-red-800')}
-      <div class="card col-span-2 row-span-2"><div class="mb-2 flex items-center justify-between gap-2"><h2 class="font-display text-xl text-navy">Overdue</h2><div class="flex gap-2"><button class="btn !min-h-9 !px-3" data-act="copy-overdue">Copy</button><button class="btn !min-h-9 !px-3" data-act="print-overdue">Print</button></div></div><ul>${over.slice(0, 8).map(row).join('') || none('Nothing overdue.')}</ul></div>
+      <div class="card col-span-2 row-span-2"><div class="mb-2 flex items-center justify-between gap-2"><h2 class="font-display text-xl text-navy">Overdue</h2><div class="flex gap-2"><button class="btn !min-h-9 !px-3" data-act="copy-overdue" data-tip="Copy the overdue list to paste into a message">Copy</button><button class="btn !min-h-9 !px-3" data-act="print-overdue" data-tip="Print the overdue list">Print</button></div></div><ul>${over.slice(0, 8).map(row).join('') || none('Nothing overdue.')}</ul></div>
       <div class="card col-span-2"><h2 class="mb-2 font-display text-xl text-navy">Due soon</h2><ul>${soon.slice(0, 5).map(row).join('') || none('Nothing due in the next 3 days.')}</ul></div>
       <div class="card col-span-2"><h2 class="mb-2 font-display text-xl text-navy">Newest additions</h2><ul>${S.books.slice(-5).reverse().map(b => `<li class="truncate border-b border-stone-100 py-1.5 text-sm">${esc(b.Title)}</li>`).join('') || none('No books yet.')}</ul></div>
       <div class="card col-span-2"><h2 class="mb-3 font-display text-xl text-navy">Checkouts per month</h2>${bars(month)}</div>
-      <div class="card col-span-2"><h2 class="mb-2 font-display text-xl text-navy">Never borrowed (${neverBorrowed().length})</h2><ul>${neverBorrowed().slice(0, 8).map(b => `<li class="truncate border-b border-stone-100 py-1.5 text-sm">${esc(b.Title)}</li>`).join('') || none('Every book has been borrowed.')}</ul></div></div>`;
+      <div class="card col-span-2"><h2 class="mb-2 font-display text-xl text-navy">Never borrowed (${neverBorrowed().length})</h2><ul>${neverBorrowed().slice(0, 8).map(b => `<li class="truncate border-b border-stone-100 py-1.5 text-sm">${esc(b.Title)}</li>`).join('') || none('Every book has been borrowed.')}</ul></div>
+      <div class="card col-span-2"><h2 class="mb-1 font-display text-xl text-navy">Student forgot their list PIN?</h2><p class="text-sm text-slate-500">Resets the PIN only. Their saved books are kept, and they choose a new PIN next time.</p><div class="mt-3 flex gap-2"><input id="pin-roll" class="input" placeholder="Roll number" autocomplete="off"><button class="btn-gold shrink-0" data-act="reset-pin" data-tip="Let this student choose a new list PIN">Reset PIN</button></div></div></div>`;
   },
 
   checkout: () => {
@@ -203,38 +212,37 @@ const views = {
       <div><label class="label" for="days">Loan days</label><input id="days" type="number" min="1" max="90" class="input" value="${S.days}"></div></div>${recentRolls()}<div id="loans">${loansBox()}</div>
       ${b ? `<div class="card mb-4 border-gold"><p class="label">Selected</p><p class="font-semibold text-navy">${esc(b.Title)}</p><p class="text-sm text-slate-500">${esc(b.Author)} · ${esc(b.BookID)}</p></div>` : `
       <input id="cq" class="input mb-3" placeholder="Search for the book to lend" value="${esc(S.cq)}"><ul id="clist" class="mb-4 grid gap-3">${checkoutList()}</ul>`}
-      <button class="btn-gold w-full" data-act="checkout">Confirm check out</button>
-      ${b ? `<button class="btn mt-2 w-full" data-act="unpick">Choose a different book</button>` : ''}`;
+      <button class="btn-gold w-full" data-act="checkout" data-tip="Lend the selected book to this roll number">Confirm check out</button>
+      ${b ? `<button class="btn mt-2 w-full" data-act="unpick" data-tip="Pick a different book">Choose a different book</button>` : ''}`;
   },
 
   records: () => `<h1 class="h1">Records</h1><input id="rq" class="input my-4" placeholder="Search roll number or title" value="${esc(S.rq)}"><div id="rlist">${recordList()}</div>`,
 
-  list: () => { const rows = S.list.map(id => S.books.find(b => b.BookID === id)).filter(Boolean); return `<h1 class="h1">${tr('tab_list')}</h1><ul class="mt-4 grid gap-3 sm:grid-cols-2">${rows.length ? rows.map(b => bookCard(b, favBtn(b))).join('') : empty(tr('emptylist'))}</ul>`; },
-  reports: () => {
-    const rows = [...S.reports].sort((a, b) => (a.Status === 'Resolved') - (b.Status === 'Resolved') || b.Date.localeCompare(a.Date));
-    return `<h1 class="h1">Reports</h1><ul class="mt-4 grid gap-3">${rows.length ? rows.map(r => `<li class="card ${r.Status === 'Resolved' ? 'opacity-60' : ''}"><div class="flex flex-wrap items-center gap-2"><span class="pill ${r.Status === 'Resolved' ? 'ok' : 'warn'}">${esc(r.Status || 'Open')}</span><span class="pill">${esc(r.Type)}</span><span class="pill">${esc(r.Role)}</span><span class="text-xs text-slate-500">${showDate(r.Date)}</span></div>
-      <p class="mt-2 whitespace-pre-wrap text-sm">${esc(r.Message)}</p>${r.Contact ? `<p class="mt-1 text-xs text-slate-500">From: ${esc(r.Contact)}</p>` : ''}<button class="btn mt-3 !py-1 text-xs" data-act="resolve" data-id="${esc(r.ReportID)}">${r.Status === 'Resolved' ? 'Reopen' : 'Mark resolved'}</button></li>`).join('') : empty('No reports yet.')}</ul>`;
+  list: () => {
+    if (!S.me) return `<h1 class="h1">${tr('tab_list')}</h1><div class="card mt-4 max-w-md"><p class="font-bold text-navy">Your reading list is private.</p><p class="mt-1 text-sm text-slate-500">Open it with your roll number and a 4-digit PIN. It works on any device.</p><button class="btn-gold mt-4" data-act="list-open" data-tip="Open or create your reading list">Open my list</button></div>`;
+    const rows = S.list.map(id => S.books.find(b => b.BookID === id)).filter(Boolean);
+    return `<div class="flex flex-wrap items-center justify-between gap-3"><h1 class="h1">${tr('tab_list')}</h1><div class="flex items-center gap-3 text-sm text-slate-500">Roll ${esc(S.me.roll)}<button class="btn !min-h-9" data-act="list-lock" data-tip="Lock your list on this device">Lock</button></div></div><ul class="mt-4 grid gap-3 sm:grid-cols-2">${rows.length ? rows.map(b => bookCard(b, favBtn(b))).join('') : empty(tr('emptylist'))}</ul>`;
   },
   analytics: () => {
     const by = Object.fromEntries(S.books.map(b => [b.BookID, b])), c = S.checkouts;
     const cards = [['Most borrowed books', tally(c.map(x => x.Title))], ['Checkouts by sub-genre', tally(c.flatMap(x => String((by[x.BookID] || {}).SubGenre || '').split('|')))],
       ['Most active readers (roll no.)', tally(c.map(x => x.RollNumber))], ['Checkouts per month', tally(c.map(x => x.CheckoutDate.slice(0, 7))).sort((a, b) => a[0].localeCompare(b[0]))]];
-    return `<h1 class="h1">Analytics</h1><div class="my-4 flex justify-end"><button class="btn" data-act="csv">${ic('install')} Export checkouts (CSV)</button></div><div class="grid gap-4 sm:grid-cols-2">${cards.map(([t, r]) => `<div class="card"><h2 class="mb-3 font-semibold text-navy">${t}</h2>${bars(r)}</div>`).join('')}</div>`;
+    return `<h1 class="h1">Analytics</h1><div class="my-4 flex justify-end"><button class="btn" data-act="csv" data-tip="Download all checkouts as a spreadsheet file">${ic('install')} Export checkouts (CSV)</button></div><div class="grid gap-4 sm:grid-cols-2">${cards.map(([t, r]) => `<div class="card"><h2 class="mb-3 font-semibold text-navy">${t}</h2>${bars(r)}</div>`).join('')}</div>`;
   },
   genres: () => `<h1 class="h1">Genres</h1><div class="mt-4 grid gap-4 sm:grid-cols-2"><div class="card grid gap-3"><div><label class="label" for="g-parent">Parent genre</label><select id="g-parent" class="input"><option>Fiction</option><option>Non-Fiction</option></select></div>
-    <div><label class="label" for="g-name">New sub-genre</label><input id="g-name" class="input"></div><button class="btn-gold" data-act="addgenre">Add sub-genre</button></div>
+    <div><label class="label" for="g-name">New sub-genre</label><input id="g-name" class="input"></div><button class="btn-gold" data-act="addgenre" data-tip="Add this sub-genre">Add sub-genre</button></div>
     <div class="card">${['Fiction', 'Non-Fiction'].map(g => `<p class="label">${g}</p><div class="mb-3 flex flex-wrap gap-1">${subs(g).map(s => `<span class="pill">${esc(s)}</span>`).join('')}</div>`).join('')}</div></div>`,
 
   add: () => {
     const d = S.draft, dup = d.ISBN && S.books.filter(b => b.ISBN === d.ISBN);
     const opts = (arr, v) => arr.map(x => `<option ${x === v ? 'selected' : ''}>${esc(x)}</option>`).join('');
-    return `<h1 class="h1">${S.editId ? 'Edit book ' + esc(S.editId) : 'Add books'}</h1>${S.editId ? '' : '<button class="btn-gold mt-4 w-full !py-4 text-base" data-act="scan">' + ic('scan') + ' Scan ISBN barcode</button><p class="my-2 text-center text-sm text-slate-500">No barcode, or the scan finds nothing? Type the title and author, then tap Look up.</p>'}
+    return `<h1 class="h1">${S.editId ? 'Edit book ' + esc(S.editId) : 'Add books'}</h1>${S.editId ? '' : '<button class="btn-gold mt-4 w-full !py-4 text-base" data-act="scan" data-tip="Scan a book barcode with the camera">' + ic('scan') + ' Scan ISBN barcode</button><p class="my-2 text-center text-sm text-slate-500">No barcode, or the scan finds nothing? Type the title and author, then tap Look up.</p>'}
     ${queued().length ? `<p class="card mt-3 text-sm font-bold">${queued().length} saved on this phone, waiting to sync.</p>` : ''}<div class="card mt-3 grid gap-3">
       <div><label class="label" for="f-title">Title</label><input id="f-title" class="input" value="${esc(d.Title)}"></div>
       <div><label class="label" for="f-author">Author</label><input id="f-author" class="input" value="${esc(d.Author)}"></div>
       <div><label class="label" for="f-isbn">ISBN <span class="font-normal">(optional)</span></label><input id="f-isbn" class="input" inputmode="numeric" value="${esc(d.ISBN)}"></div>
-      <button class="btn" data-act="search">${ic('search')} Look up details online</button>
-      ${S.results.length ? `<ul class="grid gap-2">${S.results.map((r, i) => `<li><button class="card w-full text-left hover:border-gold" data-act="use" data-id="${i}"><span class="font-semibold text-navy">${esc(r.title)}</span><br><span class="text-sm text-slate-500">${esc(r.author)}</span></button></li>`).join('')}</ul>` : ''}
+      <button class="btn" data-act="search" data-tip="Look up this book online">${ic('search')} Look up details online</button>
+      ${S.results.length ? `<ul class="grid gap-2">${S.results.map((r, i) => `<li><button class="card w-full text-left hover:border-gold" data-act="use" data-tip="Use this match" data-id="${i}"><span class="font-semibold text-navy">${esc(r.title)}</span><br><span class="text-sm text-slate-500">${esc(r.author)}</span></button></li>`).join('')}</ul>` : ''}
       ${dup && dup.length ? `<p class="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Already in the library (${esc(dup.map(b => b.BookID).join(', '))}). Saving adds another copy with its own ID.</p>` : ''}
       <div class="grid grid-cols-2 gap-3"><div><label class="label" for="f-genre">Genre</label><select id="f-genre" class="input">${opts(['Fiction', 'Non-Fiction'], d.Genre)}</select></div>
       <div><label class="label" for="f-lang">Language</label><select id="f-lang" class="input"><option value="">Not specified</option>${opts(LANGS, d.Language)}</select></div></div>
@@ -242,8 +250,8 @@ const views = {
       <div class="grid grid-cols-2 gap-3"><div><label class="label" for="f-age">Age group</label><select id="f-age" class="input"><option value="">Not specified</option>${opts(AGES, d.AgeGroup)}</select></div>
       <div><label class="label" for="f-cond">Condition</label><select id="f-cond" class="input"><option value="">Not noted</option>${opts(CONDS, d.Condition)}</select></div></div>
       <div><label class="label" for="f-works">Contained titles <span class="font-normal">(compilations only, one per line)</span></label><textarea id="f-works" rows="2" class="input">${esc(d.ContainedWorks.split('|').join('\n'))}</textarea></div>
-      ${S.editId ? '<button class="btn" data-act="cancel-edit">Cancel</button>' : '<label class="flex items-center gap-2 text-sm"><input type="checkbox" id="batch" checked> Open the scanner again after saving</label>'}
-      <button class="btn-gold" data-act="save">${S.editId ? 'Save changes' : 'Save book'}</button></div>`;
+      ${S.editId ? '<button class="btn" data-act="cancel-edit" data-tip="Discard the changes">Cancel</button>' : '<label class="flex items-center gap-2 text-sm"><input type="checkbox" id="batch" checked> Open the scanner again after saving</label>'}
+      <button class="btn-gold" data-act="save" data-tip="Save this book to the library">${S.editId ? 'Save changes' : 'Save book'}</button></div>`;
   }
 };
 
@@ -269,40 +277,43 @@ function applyItem(it, isbn) {
 
 // ───────── Shell & render ─────────
 const landing = () => `<main class="relative min-h-dvh overflow-hidden bg-ink p-6 text-white print:hidden"><img src="/school.jpg" alt="" onerror="this.remove()" class="absolute inset-0 h-full w-full object-cover opacity-20">
-  <div class="relative mx-auto flex min-h-[calc(100dvh-3rem)] max-w-3xl flex-col justify-between gap-10"><div class="flex flex-wrap justify-between gap-2">${langBar()}<button class="btn !min-h-10 !px-3" data-act="display" aria-label="Display settings">${ic('display')}</button></div>
+  <div class="relative mx-auto flex min-h-[calc(100dvh-3rem)] max-w-3xl flex-col justify-between gap-10"><div class="flex justify-end"><button class="btn !min-h-10 !px-3" data-act="display" data-tip="Change the colour theme" aria-label="Display settings">${ic('display')}</button></div>
   <div><img src="/logo.png" alt="Santa Maria School crest" class="mb-6 h-28 w-auto"><h1 class="font-display text-5xl sm:text-7xl">${tr('library')}</h1><p class="mt-3 text-lg text-white/75">Santa Maria Matriculation Higher Secondary School</p></div>
   <div class="grid gap-5"><button data-act="role" data-id="student" class="btn-gold !min-h-16 !justify-between !text-xl"><span>${tr('role_student')}</span>${ic('books', 'h-7 w-7')}</button>
-  <div class="flex flex-wrap items-center gap-3 text-sm text-white/75"><span>${tr('staff')}</span><button class="btn !min-h-10" data-act="role" data-id="librarian">${tr('role_librarian')}</button><button class="btn !min-h-10" data-act="role" data-id="principal">${tr('role_principal')}</button></div>${installBlock()}</div></div></main>`;
+  <div class="flex flex-wrap items-center gap-3 text-sm text-white/75"><span>${tr('staff')}</span><button class="btn !min-h-10" data-act="role" data-id="librarian">${tr('role_librarian')}</button><button class="btn !min-h-10" data-act="role" data-id="principal">${tr('role_principal')}</button><button class="ml-auto text-xs text-white/60 underline" data-act="role" data-id="admin" data-tip="Owner sign in, for reports only">Owner</button></div>${installBlock()}</div></div></main>`;
 
 function shell() {
   const tabs = tabsFor(), staff = isStaff(), v = views[S.tab](), narrow = staff && ['add', 'checkout'].includes(S.tab);
   const side = staff ? `<aside class="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col justify-between border-r border-white/10 bg-ink p-4 text-white lg:flex">
     <div><div class="flex items-center gap-3 px-2 pb-6"><img src="/logo.png" alt="" class="h-12 w-auto"><div><p class="font-display text-xl leading-tight">Library</p><p class="text-xs text-white/70">${tr('role_' + S.role)}</p></div></div>
-    <nav class="grid gap-1">${tabs.map(x => `<button data-act="tab" data-id="${x[0]}" class="navbtn gap-3 !justify-start !text-base ${S.tab === x[0] ? 'on' : ''}">${ic(x[2])}${tr(x[1])}</button>`).join('')}</nav></div>
-    <div class="grid gap-2"><button class="navbtn gap-3 border border-white/20 !justify-start" data-act="report-open" data-id="t_other">${ic('flag')}${tr('report')}</button><button class="navbtn gap-3 border border-white/20 !justify-start" data-act="display">${ic('display')}Display</button><button class="navbtn border border-white/20 !justify-start" data-act="logout">${tr('signout')}</button></div></aside>` : '';
+    <nav class="grid gap-1">${tabs.map(x => `<button data-act="tab" data-id="${x[0]}" data-tip="${tabTip(x[0])}" class="navbtn gap-3 !justify-start !text-base ${S.tab === x[0] ? 'on' : ''}">${ic(x[2])}${tr(x[1])}</button>`).join('')}</nav></div>
+    <div class="grid gap-2"><button class="navbtn gap-3 border border-white/20 !justify-start" data-act="report-open" data-tip="Report a problem or a missing book" data-id="t_other">${ic('flag')}${tr('report')}</button><button class="navbtn gap-3 border border-white/20 !justify-start" data-act="display" data-tip="Change the colour theme">${ic('display')}Display</button><button class="navbtn border border-white/20 !justify-start" data-act="logout" data-tip="Sign out">${tr('signout')}</button></div></aside>` : '';
   return `<div class="min-h-dvh ${staff ? 'lg:flex' : ''} ${tabs.length > 1 ? 'pb-20 ' + (staff ? 'lg:pb-0' : 'sm:pb-0') : ''}">${side}
   <div class="min-w-0 flex-1"><header class="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-white/10 bg-ink px-4 py-3 text-white sm:px-8 ${staff ? 'lg:hidden' : ''}">
     <div class="flex items-center gap-3"><img src="/logo.png" alt="" class="h-8 w-auto"><span class="font-display hidden text-lg sm:inline">Library</span><span class="hidden rounded-full bg-white/10 px-3 py-1 text-xs sm:inline">${ROLES[S.role].name}</span></div>
-    ${tabs.length > 1 && !staff ? `<nav class="hidden gap-1 sm:flex">${tabs.map(x => `<button data-act="tab" data-id="${x[0]}" class="navbtn ${S.tab === x[0] ? 'on' : ''}">${tr(x[1])}</button>`).join('')}</nav>` : ''}
-    <div class="flex items-center gap-2">${S.role === 'student' ? langBar() : ''}<button class="navbtn border border-white/20" data-act="report-open" data-id="t_other" aria-label="${esc(tr('report'))}">${ic('flag')}</button><button class="navbtn border border-white/20" data-act="display" aria-label="Display settings">${ic('display')}</button><button class="navbtn border border-white/20" data-act="logout">${tr('signout')}</button></div></header>
+    ${tabs.length > 1 && !staff ? `<nav class="hidden gap-1 sm:flex">${tabs.map(x => `<button data-act="tab" data-id="${x[0]}" data-tip="${tabTip(x[0])}" class="navbtn ${S.tab === x[0] ? 'on' : ''}">${tr(x[1])}</button>`).join('')}</nav>` : ''}
+    <div class="flex items-center gap-2"><button class="navbtn border border-white/20" data-act="report-open" data-tip="Report a problem or a missing book" data-id="t_other" aria-label="${esc(tr('report'))}">${ic('flag')}</button><button class="navbtn border border-white/20" data-act="display" data-tip="Change the colour theme" aria-label="Display settings">${ic('display')}</button><button class="navbtn border border-white/20" data-act="logout" data-tip="Sign out">${tr('signout')}</button></div></header>
   <main class="mx-auto p-4 ${staff ? 'max-w-7xl sm:p-6 lg:p-10' : 'max-w-5xl sm:p-8'}">${narrow ? `<div class="mx-auto max-w-3xl">${v}</div>` : v}</main></div>
-  ${tabs.length > 1 ? `<nav class="fixed inset-x-0 bottom-0 z-20 flex overflow-x-auto border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] ${staff ? 'lg:hidden' : 'sm:hidden'}">${tabs.map(x => `<button data-act="tab" data-id="${x[0]}" class="flex min-w-[4.5rem] flex-1 flex-col items-center py-2 text-xs ${S.tab === x[0] ? 'font-bold text-navy' : 'text-slate-500'}">${ic(x[2])}${tr(x[1])}</button>`).join('')}</nav>` : ''}</div>`;
+  ${tabs.length > 1 ? `<nav class="fixed inset-x-0 bottom-0 z-20 flex overflow-x-auto border-t border-stone-200 bg-surface pb-[env(safe-area-inset-bottom)] ${staff ? 'lg:hidden' : 'sm:hidden'}">${tabs.map(x => `<button data-act="tab" data-id="${x[0]}" data-tip="${tabTip(x[0])}" class="flex min-w-[4.5rem] flex-1 flex-col items-center py-2 text-xs ${S.tab === x[0] ? 'font-bold text-navy' : 'text-slate-500'}">${ic(x[2])}${tr(x[1])}</button>`).join('')}</nav>` : ''}</div>`;
 }
 
 function overlays() {
   if (S.scanning) return `<div class="fixed inset-0 z-50 flex flex-col bg-black"><p class="p-4 text-center text-sm text-white">Point the camera at the barcode on the back of the book</p><div id="reader" class="flex-1"></div><button class="btn m-4" data-act="cancel-scan">Cancel</button></div>`;
-  const box = inner => `<div class="fixed inset-0 z-50 grid place-items-center bg-ink/70 p-4"><div role="dialog" aria-modal="true" class="w-full max-w-sm rounded-2xl bg-white p-6">${inner}</div></div>`;
+  const box = inner => `<div class="fixed inset-0 z-50 grid place-items-center bg-ink/70 p-4"><div role="dialog" aria-modal="true" class="w-full max-w-sm rounded-2xl bg-surface p-6">${inner}</div></div>`;
   if (S.login) return box(`<h2 class="font-display text-2xl text-navy">${ROLES[S.login].name}</h2><label class="label mt-4" for="pw">${tr('password')}</label><input id="pw" type="password" class="input" autocomplete="current-password">
     <p id="lerr" class="mt-2 hidden text-sm text-red-800"></p><button class="btn-gold mt-4 w-full" data-act="login">${tr('signin')}</button><button class="btn mt-2 w-full" data-act="close">${tr('back2')}</button>`);
   if (S.confirm) { const b = S.books.find(x => x.BookID === S.confirm); return box(`<h2 class="font-display text-xl text-navy">Remove this book?</h2><p class="my-3 text-sm text-slate-600">${esc(b?.Title)} (${esc(S.confirm)}) will be deleted from the catalogue.</p>
     <div class="flex gap-2"><button class="btn flex-1" data-act="close">Keep</button><button class="btn-red flex-1" data-act="remove">Remove</button></div>`); }
   if (S.display) return box(`<h2 class="font-display text-2xl text-navy">Display</h2><p class="label mt-4">Theme</p><div class="grid gap-2">${[['light', 'Paper', 'Warm and calm'], ['dark', 'Night', 'High contrast, easy on the eyes'], ['bento', 'Bento', 'Navy tiles with gold accents']].map(([k, n, d]) => `<button data-act="theme" data-id="${k}" aria-pressed="${S.theme === k}" class="btn !justify-between ${S.theme === k ? '!bg-gold !text-ink' : ''}"><span>${n}</span><span class="text-xs font-normal">${d}</span></button>`).join('')}</div>
-    <p class="label mt-4">Text size</p><div class="grid grid-cols-2 gap-2">${[['', 'Normal'], ['big', 'Large']].map(([k, n]) => `<button data-act="size" data-id="${k}" aria-pressed="${S.big === !!k}" class="btn ${S.big === !!k ? '!bg-gold !text-ink' : ''}">${n}</button>`).join('')}</div><button class="btn-gold mt-5 w-full" data-act="close">Done</button>`);
+    <button class="btn-gold mt-5 w-full" data-act="close">Done</button>`);
+  if (S.listLogin) return box(`<h2 class="font-display text-2xl text-navy">My reading list</h2><p class="mt-1 text-sm text-slate-500">Only you can open it, from any device. First time? Choose any 4-digit PIN and remember it. A librarian can reset it.</p>
+    <label class="label mt-4" for="ll-roll">Roll number</label><input id="ll-roll" class="input" autocomplete="off"><label class="label mt-3" for="ll-pin">4-digit PIN</label><input id="ll-pin" type="password" inputmode="numeric" maxlength="4" autocomplete="off" class="input">
+    <p id="ll-err" class="mt-2 hidden text-sm text-red-800"></p><div class="mt-4 flex gap-2"><button class="btn flex-1" data-act="close">Cancel</button><button class="btn-gold flex-1" data-act="list-go">Open</button></div>`);
   if (S.surprise) {
     const b = S.books.find(x => x.BookID === S.surprise);
     if (b) return box(`<p class="text-sm font-semibold text-amber-700">${tr('surprise')}</p><h2 class="font-display mt-2 text-2xl text-navy">${esc(b.Title)}</h2><p class="text-slate-500">${esc(b.Author)}</p>
       <div class="mt-3 flex flex-wrap gap-1">${String(b.SubGenre || '').split('|').filter(Boolean).map(x => `<span class="pill">${esc(x)}</span>`).join('')}<span class="pill ok">${tr('availnow')}</span></div>
-      <div class="mt-5 flex gap-2"><button class="btn flex-1" data-act="surprise">${tr('another')}</button>${S.role === 'student' ? favBtn(b, 'flex-1') : ''}<button class="btn-gold flex-1" data-act="close">${tr('close')}</button></div>`);
+      <div class="mt-5 flex gap-2"><button class="btn flex-1" data-act="surprise" data-tip="Pick a random available book for me">${tr('another')}</button>${S.role === 'student' ? favBtn(b, 'flex-1') : ''}<button class="btn-gold flex-1" data-act="close">${tr('close')}</button></div>`);
   }
   if (S.report) {
     const r = S.report;
@@ -310,7 +321,7 @@ function overlays() {
       <select id="r-type" class="input">${['t_missing', 't_wrong', 't_app', 't_other'].map(k => `<option value="${k}" ${r.type === k ? 'selected' : ''}>${esc(tr(k))}</option>`).join('')}</select>
       <label class="label mt-3" for="r-msg">${tr('describe')}</label><textarea id="r-msg" rows="4" maxlength="1000" class="input">${esc(r.msg)}</textarea>
       <label class="label mt-3" for="r-contact">${tr('contact')}</label><input id="r-contact" class="input" maxlength="80">
-      <div class="mt-4 flex gap-2"><button class="btn flex-1" data-act="close">${tr('cancel')}</button><button class="btn-gold flex-1" data-act="report-send">${tr('send')}</button></div>`);
+      <div class="mt-4 flex gap-2"><button class="btn flex-1" data-act="close">${tr('cancel')}</button><button class="btn-gold flex-1" data-act="report-send" data-tip="Send this report">${tr('send')}</button></div>`);
   }
   return '';
 }
@@ -319,6 +330,7 @@ let first = true;
 function render() {
   $('#app').innerHTML = (S.role ? shell() : landing()) + overlays();
   if (S.login) $('#pw')?.focus();
+  if (S.listLogin) $('#ll-roll')?.focus();
 }
 const refreshList = (id, fn) => { const el = $(id); if (el) el.innerHTML = fn(); };
 const guard = async (fn) => { try { await fn(); } catch (e) { toast(e.message, 'error'); if (/sign in again/i.test(e.message)) H.logout(); } };
@@ -340,17 +352,16 @@ async function openScanner() {
 
 const H = {
   role: id => { S.login = id; render(); },
-  close: () => { S.display = false; S.login = null; S.confirm = null; S.report = null; S.surprise = null; render(); },
+  close: () => { S.listLogin = null; S.open = null; S.display = false; S.login = null; S.confirm = null; S.report = null; S.surprise = null; render(); },
   async login() {
     try {
       const d = await api('login', { role: S.login, password: $('#pw').value });
-      setToken(d.token); S.role = S.login; S.login = null; S.tab = S.role === 'student' ? 'catalogue' : 'dashboard'; S.draft = newDraft();
-      S.loading = true; render(); try { await load(); } catch (e) { toast(e.message, 'error'); } S.loading = false; render(); syncQueue();
-      if (S.role === 'principal') loadReports().then(render).catch(() => {});
+      setToken(d.token); S.role = S.login; S.login = null; S.tab = S.role === 'student' ? 'catalogue' : S.role === 'admin' ? 'reports' : 'dashboard'; S.draft = newDraft();
+      S.loading = true; render(); try { await (S.role === 'admin' ? loadReports() : load()); } catch (e) { toast(e.message, 'error'); } S.loading = false; render(); syncQueue();
     } catch (e) { const el = $('#lerr'); el.textContent = e.message; el.classList.remove('hidden'); }
   },
-  logout: () => { setToken(null); Object.assign(S, { role: null, editId: null, sg: '', books: [], checkouts: [], genres: [], pick: null, roll: '', q: '', cq: '', rq: '' }); render(); },
-  tab: id => { readForm(); if (S.tab === 'add' && id !== 'add' && S.editId) { S.editId = null; S.draft = newDraft(); } S.tab = id; render(); if (id !== 'add') guard(async () => { await load(); if (S.role === 'principal' && id === 'reports') await loadReports(); if (S.tab === id) render(); }); },
+  logout: () => { setToken(null); Object.assign(S, { role: null, me: null, list: [], listLogin: null, editId: null, sg: '', books: [], checkouts: [], genres: [], pick: null, roll: '', q: '', cq: '', rq: '' }); render(); },
+  tab: id => { readForm(); if (S.tab === 'add' && id !== 'add' && S.editId) { S.editId = null; S.draft = newDraft(); } S.tab = id; render(); if (id !== 'add') guard(async () => { await (S.role === 'admin' ? loadReports() : load()); if (S.tab === id) render(); }); },
   pick: id => { S.pick = id; render(); },
   unpick: () => { S.pick = null; render(); },
   checkout: () => guard(async () => {
@@ -364,7 +375,12 @@ const H = {
   return: id => guard(async () => { await api('returnBook', { checkoutId: id }); await load(); render(); toast('Book returned.', 'success'); }),
   'ask-remove': id => { S.confirm = id; render(); },
   remove: () => guard(async () => { await api('removeBook', { bookId: S.confirm }); S.confirm = null; await load(); render(); toast('Book removed.', 'success'); }),
-  sg: id => { S.sg = id === S.sg ? '' : id; render(); },
+  sg: id => { S.fg = []; S.fs = [id]; render(); },
+  dd: id => { S.open = S.open === id ? null : id; render(); },
+  fg: id => { const back = keepScroll(); S.fg = toggle(S.fg, id); S.fs = S.fs.filter(x => subOptions().includes(x)); render(); back(); },
+  fs: id => { const back = keepScroll(); S.fs = toggle(S.fs, id); render(); back(); },
+  more: () => { S.more = !S.more; render(); },
+  'clear-all': () => { S.fg = []; S.fs = []; S.lng = ''; S.age = ''; S.avail = ''; S.open = null; render(); },
   edit: id => {
     const b = S.books.find(x => x.BookID === id); if (!b) return;
     S.editId = id; S.tab = 'add'; S.results = [];
@@ -383,11 +399,27 @@ const H = {
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([rows.map(r => r.map(q).join(',')).join('\n')], { type: 'text/csv' }));
     a.download = 'checkouts.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   },
-  lang: id => { S.lang = id; store.set('lang', id); document.documentElement.lang = id; render(); },
   fav: (id, el) => {
-    S.list = S.list.includes(id) ? S.list.filter(x => x !== id) : [...S.list, id]; store.set('list', S.list);
+    if (!S.me) { S.listLogin = { pending: id }; render(); return; }
+    const before = S.list; S.list = toggle(S.list, id);
     if (S.tab === 'list' && !S.surprise) render(); else { const on = S.list.includes(id); el.innerHTML = ic('heart', 'h-4 w-4', on) + ' ' + tr(on ? 'saved' : 'save'); }
+    api('listSave', { roll: S.me.roll, pin: S.me.pin, books: S.list }).catch(e => { S.list = before; render(); toast(e.message, 'error'); });
   },
+  'list-open': () => { S.listLogin = { pending: null }; render(); },
+  'list-go': async () => {
+    const roll = $('#ll-roll').value.trim(), pin = $('#ll-pin').value.trim(), err = $('#ll-err'), pending = S.listLogin?.pending;
+    try {
+      const r = await api('listOpen', { roll, pin }); let books = r.books;
+      if (pending && !books.includes(pending)) { books = [...books, pending]; await api('listSave', { roll, pin, books }); }
+      S.me = { roll, pin }; S.list = books; S.listLogin = null; render();
+      toast(r.isNew ? 'List created. Remember your PIN.' : 'Welcome back.', 'success');
+    } catch (e) { err.textContent = e.message; err.classList.remove('hidden'); }
+  },
+  'list-lock': () => { S.me = null; S.list = []; render(); },
+  'reset-pin': () => guard(async () => {
+    const roll = $('#pin-roll').value.trim(); await api('listReset', { roll }); $('#pin-roll').value = '';
+    toast(`PIN reset for roll ${roll}. They choose a new one next time.`, 'success');
+  }),
   surprise: () => {
     const open = S.books.filter(b => b.Available === 'Yes' && b.BookID !== S.surprise);
     if (!open.length) return toast(tr('nomatch'));
@@ -406,8 +438,7 @@ const H = {
   }),
   install: async () => { if (!deferredPrompt) return; deferredPrompt.prompt(); deferredPrompt = null; S.canInstall = false; render(); },
   display: () => { S.display = true; render(); },
-  theme: id => { S.theme = id; store.set('theme', id); applyDisplay(); render(); },
-  size: id => { S.big = !!id; store.set('big', S.big); applyDisplay(); render(); },
+  theme: id => { S.theme = id; store.set('theme2', id); applyDisplay(); render(); },
   roll: id => { S.roll = id; render(); },
   lng: id => { S.lng = id === S.lng ? '' : id; render(); },
   age: id => { S.age = id === S.age ? '' : id; render(); },
@@ -439,16 +470,34 @@ const H = {
 };
 
 // ───────── Events ─────────
-document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (el) H[el.dataset.act]?.(el.dataset.id, el); });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && (S.login || S.confirm || S.report || S.surprise || S.display)) H.close();
-  if (e.key === 'Enter' && e.target.id === 'pw') H.login();
+document.addEventListener('click', e => {
+  if (S.open && !e.target.closest('[data-act="dd"]') && !e.target.closest('[id^="dd-"]')) { S.open = null; queueMicrotask(render); }
+  const el = e.target.closest('[data-act]'); if (el) H[el.dataset.act]?.(el.dataset.id, el);
 });
-const applyDisplay = () => { document.documentElement.dataset.theme = S.theme; document.documentElement.classList.toggle('big', S.big); };
+// Hover and keyboard-focus hints: a small box naming what a control does.
+const tipEl = document.body.appendChild(Object.assign(document.createElement('div'), { id: 'tip' }));
+tipEl.setAttribute('role', 'tooltip');
+const tipHide = () => { tipEl.style.display = 'none'; };
+const tipShow = e => {
+  const t = e.target.closest?.('[data-tip]');
+  if (!t || !t.dataset.tip || !matchMedia('(hover: hover)').matches) return tipHide();
+  tipEl.textContent = t.dataset.tip; tipEl.style.display = 'block';
+  const r = t.getBoundingClientRect(), w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+  tipEl.style.left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, innerWidth - w - 8)) + 'px';
+  tipEl.style.top = (r.bottom + 8 + h < innerHeight ? r.bottom + 8 : r.top - h - 8) + 'px';
+};
+document.addEventListener('mouseover', tipShow); document.addEventListener('focusin', tipShow);
+['mousedown', 'scroll', 'keydown'].forEach(ev => addEventListener(ev, tipHide, true));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && (S.login || S.confirm || S.report || S.surprise || S.display || S.open || S.listLogin)) H.close();
+  if (e.key === 'Enter' && e.target.id === 'pw') H.login();
+  if (e.key === 'Enter' && e.target.id === 'll-pin') H['list-go']();
+});
+const applyDisplay = () => { document.documentElement.dataset.theme = S.theme;  };
 applyDisplay();
 addEventListener('online', syncQueue);
 let deferredPrompt = null;
-document.documentElement.lang = S.lang;
+document.documentElement.lang = 'en';
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; S.canInstall = true; if (!S.role && !S.login) render(); });
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 const lists = { q: v => { S.q = v; refreshList('#list', bookList); }, cq: v => { S.cq = v; refreshList('#clist', checkoutList); }, rq: v => { S.rq = v; refreshList('#rlist', recordList); } };
@@ -460,6 +509,8 @@ document.addEventListener('input', e => {
   if (id === 'days') S.days = value;
 });
 document.addEventListener('change', e => {
+  if (e.target.id === 'lng-sel') { S.lng = e.target.value; render(); }
+  if (e.target.id === 'age-sel') { S.age = e.target.value; render(); }
   if (e.target.id === 'avail') { S.avail = e.target.value; refreshList('#list', bookList); }
   if (e.target.id === 'f-genre') { readForm(); S.draft.SubGenre = []; render(); }
 });

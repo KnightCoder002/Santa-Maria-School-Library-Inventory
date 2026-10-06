@@ -5,11 +5,12 @@ const SHEET_ID = 'YOUR_GOOGLE_SHEET_ID_HERE';
 const HASHES = { // SHA-256 of each password. CHANGE THESE (see README): the old ones were shared in chat.
   student:   '703b0a3d6ad75b649a28adde7d83c6251da457549263bc7ff45ec709b0a8448b',
   librarian: 'ab8e89c55367f55a2f933b8dc8a9994d61f997df2b402274eb943fa22d77394a',
-  principal: '3549f22fb8622a6d216ef2dcd592e04ed1f1e604cef032d7e5c425e8e72a878e'
+  principal: '3549f22fb8622a6d216ef2dcd592e04ed1f1e604cef032d7e5c425e8e72a878e',
+  admin:     'SET-YOUR-OWN-HASH' // owner login: the only one that can read reports. Create it with makeHash() (see DEPLOY.md).
 };
 const TTL = 4 * 3600;
-const ALL = ['student', 'librarian', 'principal'], STAFF = ['librarian', 'principal'];
-const ACL = { getAll: ALL, addBook: STAFF, updateBook: STAFF, checkout: STAFF, returnBook: STAFF, removeBook: ['principal'], addGenre: ['principal'], report: ALL, getReports: ['principal'], setReport: ['principal'] };
+const ALL = ['student', 'librarian', 'principal'], STAFF = ['librarian', 'principal'], REP = ['student', 'librarian', 'principal', 'admin'];
+const ACL = { getAll: ALL, addBook: STAFF, updateBook: STAFF, checkout: ['librarian'], returnBook: STAFF, removeBook: ['principal'], listOpen: ['student'], listSave: ['student'], listReset: STAFF, addGenre: ['principal'], report: REP, getReports: ['admin'], setReport: ['admin'] };
 const INV = ['BookID','Title','Author','Genre','SubGenre','Available','AgeGroup','Condition','Language','ContainedWorks','ISBN'];
 
 function doGet() { return out({ success: false, error: 'Use POST.' }); }
@@ -60,6 +61,21 @@ function repSheet() {
   let s = ss.getSheetByName('Reports');
   if (!s) { s = ss.insertSheet('Reports'); s.appendRow(['ReportID', 'Date', 'Role', 'Type', 'Message', 'Contact', 'Status']); }
   return s;
+}
+// ── Personal reading lists: roll number + 4-digit PIN, stored in the Lists tab ──
+function listSheet() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let s = ss.getSheetByName('Lists');
+  if (!s) { s = ss.insertSheet('Lists'); s.appendRow(['RollNumber', 'PinHash', 'Books', 'Updated']); s.getRange('A:A').setNumberFormat('@'); }
+  return s;
+}
+function listCheck(p) {
+  const roll = String(p.roll || '').trim(), pin = String(p.pin || '');
+  if (!/^[A-Za-z0-9\-\/]{1,20}$/.test(roll)) throw new Error('Enter your roll number.');
+  if (!/^\d{4}$/.test(pin)) throw new Error('The PIN must be 4 digits.');
+  const c = CacheService.getScriptCache(), k = 'pin_' + roll, n = +(c.get(k) || 0);
+  if (n >= 5) throw new Error('Too many wrong PINs. Try again in 10 minutes.');
+  return { roll: roll, hash: sha('list:' + roll + ':' + pin), c: c, k: k, n: n };
 }
 function rowOf(s, id) {
   const r = s.getLastRow(); if (r < 2) return -1;
@@ -170,6 +186,34 @@ const H = {
       if (r < 0) throw new Error('Report not found.');
       s.getRange(r, 7).setValue(p.status === 'Resolved' ? 'Resolved' : 'Open');
       return { ok: true };
+    });
+  },
+  listOpen(p) {
+    return locked(() => {
+      const a = listCheck(p), s = listSheet(), r = rowOf(s, a.roll);
+      if (r < 0) { s.appendRow([a.roll, a.hash, '', fmt(new Date())]); return { books: [], isNew: true }; }
+      const row = s.getRange(r, 1, 1, 3).getValues()[0], books = String(row[2]).split('|').filter(Boolean);
+      if (!row[1]) { s.getRange(r, 2).setValue(a.hash); a.c.remove(a.k); return { books: books, isNew: true }; } // PIN was reset: choose a new one
+      if (row[1] !== a.hash) { a.c.put(a.k, String(a.n + 1), 600); throw new Error('Wrong PIN. ' + (4 - a.n) + ' tries left.'); }
+      a.c.remove(a.k);
+      return { books: books, isNew: false };
+    });
+  },
+  listSave(p) {
+    return locked(() => {
+      const a = listCheck(p), s = listSheet(), r = rowOf(s, a.roll);
+      if (r < 0 || s.getRange(r, 2).getValue() !== a.hash) { a.c.put(a.k, String(a.n + 1), 600); throw new Error('Wrong PIN.'); }
+      const ids = (Array.isArray(p.books) ? p.books : []).map(x => String(x).replace(/[^A-Za-z0-9\-]/g, '')).filter(Boolean).slice(0, 200);
+      s.getRange(r, 3).setValue(ids.join('|')); s.getRange(r, 4).setValue(fmt(new Date()));
+      return { saved: true };
+    });
+  },
+  listReset(p) {
+    return locked(() => {
+      const roll = String(p.roll || '').trim(), s = listSheet(), r = rowOf(s, roll);
+      if (r < 0) throw new Error('That roll number has no saved list.');
+      s.getRange(r, 2).setValue(''); CacheService.getScriptCache().remove('pin_' + roll);
+      return { reset: true };
     });
   },
   addGenre(p) {
