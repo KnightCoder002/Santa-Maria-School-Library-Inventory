@@ -1,0 +1,27 @@
+// Student-facing text in English, Tamil and Hindi. Staff screens stay in English.
+export const T = {
+  en: { library:'The Library', role_student:'Student / Teacher', role_librarian:'Librarian', role_principal:'Principal / Director',
+    desc_student:'Browse the catalogue and see what is available.', desc_librarian:'Check books out and in, and add new books.', desc_principal:'Everything the librarian can do, plus removing books.',
+    staff:'Staff sign in', hero:'What will you read next?', booksWord:'books', newArr:'New arrivals', mostB:'Most borrowed', password:'Password', signin:'Sign in', back2:'Back', signout:'Sign out', title:'Library catalogue', search:'Search title, author or ISBN', all:'All', available:'Available', out:'Checked out',
+    back:'Back by', availnow:'Available now', quote:'Quote of the day', bod:'Book of the day', surprise:'Surprise me', another:'Another', close:'Close', tab_cat:'Catalogue', tab_list:'My list',
+    save:'Save', saved:'Saved', emptylist:'Nothing saved yet. Tap Save on a book to add it here.', nomatch:'No books match. Try fewer letters, or ask the librarian.',
+    report:'Report a problem', what:'What is it about?', t_missing:'A book is missing', t_wrong:'Wrong book details', t_app:'Problem with this site', t_other:'Something else',
+    describe:'Tell us what happened', contact:'Your name or roll number (optional)', send:'Send', cancel:'Cancel', thanks:'Thank you. We got your report.',
+    install:'Add to home screen', iosHint:'On iPhone: tap Share, then Add to Home Screen.' },
+  ta: { library:'நூலகம்', role_student:'மாணவர் / ஆசிரியர்', role_librarian:'நூலகர்', role_principal:'முதல்வர் / இயக்குநர்',
+    desc_student:'நூல் பட்டியலைப் பார்த்து, எவை கிடைக்கும் என அறியுங்கள்.', desc_librarian:'புத்தகங்களை வழங்க, திரும்பப் பெற, புதியவற்றைச் சேர்க்க.', desc_principal:'நூலகர் செய்யக்கூடிய அனைத்தும், கூடுதலாக புத்தகங்களை நீக்கலாம்.',
+    staff:'பணியாளர் உள்நுழைவு', hero:'அடுத்து எதைப் படிக்கப் போகிறீர்கள்?', booksWord:'புத்தகங்கள்', newArr:'புதிய வரவுகள்', mostB:'அதிகம் எடுக்கப்பட்டவை', password:'கடவுச்சொல்', signin:'உள்நுழை', back2:'பின்செல்', signout:'வெளியேறு', title:'நூலக பட்டியல்', search:'தலைப்பு, ஆசிரியர் அல்லது ISBN தேடுங்கள்', all:'அனைத்தும்', available:'கிடைக்கும்', out:'வெளியே கொடுக்கப்பட்டது',
+    back:'திரும்ப வரும் தேதி', availnow:'இப்போது கிடைக்கும்', quote:'இன்றைய மேற்கோள்', bod:'இன்றைய புத்தகம்', surprise:'என்னை ஆச்சரியப்படுத்து', another:'வேறொன்று', close:'மூடு', tab_cat:'பட்டியல்', tab_list:'என் பட்டியல்',
+    save:'சேமி', saved:'சேமிக்கப்பட்டது', emptylist:'இன்னும் எதுவும் சேமிக்கப்படவில்லை. புத்தகத்தில் "சேமி" என்பதைத் தட்டவும்.', nomatch:'பொருத்தமான புத்தகங்கள் இல்லை. குறைவான எழுத்துகளை முயற்சிக்கவும் அல்லது நூலகரிடம் கேளுங்கள்.',
+    report:'சிக்கலைப் புகாரளி', what:'இது எதைப் பற்றியது?', t_missing:'புத்தகம் காணவில்லை', t_wrong:'புத்தக விவரங்கள் தவறு', t_app:'இந்த தளத்தில் சிக்கல்', t_other:'வேறு ஏதாவது',
+    describe:'என்ன நடந்தது என்று சொல்லுங்கள்', contact:'உங்கள் பெயர் அல்லது பதிவெண் (விருப்பம்)', send:'அனுப்பு', cancel:'ரத்து செய்', thanks:'நன்றி. உங்கள் புகார் கிடைத்தது.',
+    install:'முகப்புத் திரையில் சேர்', iosHint:'iPhone-இல்: பகிர் என்பதைத் தட்டி, முகப்புத் திரையில் சேர் என்பதைத் தேர்ந்தெடுக்கவும்.' },
+  hi: { library:'पुस्तकालय', role_student:'छात्र / शिक्षक', role_librarian:'लाइब्रेरियन', role_principal:'प्रधानाचार्य / निदेशक',
+    desc_student:'सूची देखें और जानें कि कौन-सी किताबें उपलब्ध हैं।', desc_librarian:'किताबें जारी करें, वापस लें और नई किताबें जोड़ें।', desc_principal:'लाइब्रेरियन के सभी कार्य, साथ ही किताबें हटाना।',
+    staff:'स्टाफ साइन इन', hero:'आप आगे क्या पढ़ेंगे?', booksWord:'किताबें', newArr:'नई किताबें', mostB:'सबसे ज़्यादा ली गई', password:'पासवर्ड', signin:'साइन इन', back2:'वापस', signout:'साइन आउट', title:'पुस्तकालय सूची', search:'शीर्षक, लेखक या ISBN खोजें', all:'सभी', available:'उपलब्ध', out:'जारी किया गया',
+    back:'वापसी की तारीख', availnow:'अभी उपलब्ध', quote:'आज का विचार', bod:'आज की पुस्तक', surprise:'मुझे सरप्राइज़ दो', another:'दूसरी', close:'बंद करें', tab_cat:'सूची', tab_list:'मेरी सूची',
+    save:'सहेजें', saved:'सहेजी गई', emptylist:'अभी कुछ सहेजा नहीं गया। किसी किताब पर "सहेजें" दबाएँ।', nomatch:'कोई किताब नहीं मिली। कम अक्षर आज़माएँ या लाइब्रेरियन से पूछें।',
+    report:'समस्या बताएँ', what:'यह किस बारे में है?', t_missing:'किताब नहीं मिल रही', t_wrong:'किताब की जानकारी गलत है', t_app:'इस साइट में समस्या', t_other:'कुछ और',
+    describe:'बताइए क्या हुआ', contact:'आपका नाम या रोल नंबर (वैकल्पिक)', send:'भेजें', cancel:'रद्द करें', thanks:'धन्यवाद। आपकी रिपोर्ट मिल गई।',
+    install:'होम स्क्रीन पर जोड़ें', iosHint:'iPhone पर: शेयर दबाएँ, फिर होम स्क्रीन पर जोड़ें चुनें।' }
+};

@@ -1,0 +1,35 @@
+@import "tailwindcss";
+@theme {
+  --color-ink:#1a2744; --color-navy:#1a2744; --color-gold:#c9a84c; --color-gold-light:#e2c97a; --color-parchment:#f7f3ec;
+  --font-display:"Alegreya",Georgia,"Noto Sans Tamil","Noto Sans Devanagari",serif;
+  --font-sans:"Atkinson Hyperlegible","Noto Sans Tamil","Noto Sans Devanagari",system-ui,sans-serif;
+}
+:root{--edge:#1a2744}
+:root[data-theme=dark]{--edge:#9db0e8;--color-ink:#05080f;--color-navy:#dbe4ff;--color-gold:#f0c24b;--color-gold-light:#ffe08a;--color-parchment:#0d111b;--color-white:#171d2c;
+  --color-slate-800:#f1f3f9;--color-slate-600:#d3d8e6;--color-slate-500:#b4bcd0;--color-stone-100:#242c40;--color-stone-200:#3a4560;--color-stone-300:#55618a;--color-red-800:#ff9d9d;--color-amber-700:#f0c24b}
+/* Bento: deep navy tiles, gold accents, no shadows or glow */
+/* Bento uses the original school palette: navy #1a2744 tiles on deep navy #111a30, gold #c9a84c */
+:root[data-theme=bento]{--edge:#c9a84c;--color-ink:#111a30;--color-navy:#e8edf9;--color-parchment:#111a30;--color-white:#1a2744;--color-gold:#c9a84c;--color-gold-light:#e2c97a;
+  --color-slate-800:#f4f6fb;--color-slate-600:#d3daea;--color-slate-500:#b4bfd8;--color-stone-100:#243560;--color-stone-200:#2f4075;--color-stone-300:#52659f;--color-red-800:#ff9d9d;--color-amber-700:#e2c97a}
+[data-theme=bento] .card{border:1px solid var(--color-stone-200);border-radius:20px;box-shadow:none}
+html.big{font-size:118%}
+@layer base { body{@apply bg-parchment text-slate-800 font-sans antialiased} :focus-visible{@apply outline-3 outline-offset-2 outline-gold} }
+@layer components {
+  .btn,.btn-gold,.btn-red{@apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 text-sm font-bold transition-transform duration-100 disabled:opacity-50; border-color:var(--edge); box-shadow:3px 3px 0 var(--edge)}
+  .btn:hover,.btn-gold:hover,.btn-red:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 var(--edge)}
+  .btn:active,.btn-gold:active,.btn-red:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--edge)}
+  .btn{@apply bg-white text-navy} .btn-gold{@apply bg-gold text-ink} .btn-red{background:#b91c1c;color:#fff}
+  .input{@apply min-h-11 w-full rounded-lg border-2 border-stone-300 bg-white px-3 py-2 text-base focus:border-gold outline-none}
+  .label{@apply block text-sm font-bold text-slate-600 mb-1}
+  .card{@apply rounded-xl border border-stone-200 bg-white p-4 shadow-sm}
+  .h1{@apply font-display text-3xl sm:text-4xl text-navy font-bold}
+  .pill{@apply inline-flex items-center gap-1 rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-bold text-navy}
+  .ok{background:#d1fae5;color:#065f46}.warn{background:#fef3c7;color:#92400e}.bad{background:#fee2e2;color:#991b1b}
+  .navbtn{@apply inline-flex min-h-10 min-w-10 items-center justify-center rounded-md px-3 text-sm text-white/80 hover:text-white} .navbtn.on{@apply bg-white/15 text-gold-light}
+}
+#toast{position:fixed;left:50%;bottom:84px;transform:translate(-50%,20px);opacity:0;transition:.25s;z-index:99;max-width:90vw}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* Tile colours taken from the crest: banner blue, laurel green, flame maroon, shield gold */
+.tile-a{background:#1f3a73;color:#fff}.tile-b{background:#3f6b48;color:#fff}.tile-c{background:#7a2b2b;color:#fff}.tile-d{background:#c9a84c;color:#1a2744}.tile-e{background:#243560;color:#fff}
+.tile-a h2,.tile-b h2,.tile-c h2,.tile-e h2{color:#e2c97a}
