@@ -143,4 +143,74 @@ const church = [
   ["Pain is God's megaphone to rouse a deaf world.", "C.S. Lewis, The Problem of Pain"],
 ];
 const mix = (...g) => { const out = []; for (let i = 0; g.some(x => i < x.length); i++) g.forEach(x => { if (i < x.length) out.push(x[i]); }); return out; };
-export const QUOTES = mix(tolkien, narnia, lit, modern, ideas, bible, church);
+const lewisMore = [
+  ["Friendship ... is born at the moment when one man says to another, ‘What! You too? I thought that no one but myself . . .’", "C.S. Lewis, The Four Loves"],
+  ["To love at all is to be vulnerable.", "C.S. Lewis, The Four Loves"],
+  ["There are no ordinary people. You have never talked to a mere mortal.", "C.S. Lewis, The Weight of Glory"],
+  ["Aim at Heaven and you will get earth ‘thrown in’: aim at earth and you will get neither.", "C.S. Lewis, Mere Christianity"],
+  ["Even in social life, you will never make a good impression on other people until you stop thinking about what sort of impression you are making.", "C.S. Lewis, Mere Christianity"],
+  ["Gratitude looks to the Past and love to the Present; fear, avarice, lust, and ambition look ahead.", "C.S. Lewis, The Screwtape Letters"],
+  ["Do not waste time bothering whether you ‘love’ your neighbour; act as if you did.", "C.S. Lewis, Mere Christianity"],
+  ["It is a good rule, after reading a new book, never to allow yourself another new one till you have read an old one in between.", "C.S. Lewis, On the Reading of Old Books"],
+  ["I tell no one any story but his own.", "Aslan, The Horse and His Boy"],
+];
+const tolkienMore = [
+  ["Short cuts make long delays.", "Pippin, The Fellowship of the Ring"],
+  ["There is nothing like looking, if you want to find something.", "Thorin, The Hobbit"],
+  ["May you ever appear where you are most needed and least expected!", "J.R.R. Tolkien, The Hobbit"],
+  ["Where there's life there's hope, as my gaffer used to say.", "Sam Gamgee, The Two Towers"],
+  ["Go not to the Elves for counsel, for they will say both no and yes.", "Frodo, The Fellowship of the Ring"],
+  ["Do not meddle in the affairs of wizards, for they are subtle and quick to anger.", "Gildor, The Fellowship of the Ring"],
+  ["Many that live deserve death. And some that die deserve life. Can you give it to them?", "Gandalf, The Fellowship of the Ring"],
+  ["I wish it need not have happened in my time.", "Frodo, The Fellowship of the Ring"],
+];
+const novelsMore = [
+  ["No one is useless in this world who lightens the burden of it for anyone else.", "Charles Dickens, Our Mutual Friend"],
+  ["A loving heart is the truest wisdom.", "Charles Dickens, David Copperfield"],
+  ["It was the best of times, it was the worst of times.", "Charles Dickens, A Tale of Two Cities"],
+  ["There is no charm equal to tenderness of heart.", "Jane Austen, Emma"],
+  ["I declare after all there is no enjoyment like reading!", "Jane Austen, Pride and Prejudice (said by Miss Bingley)"],
+  ["I would always rather be happy than dignified.", "Charlotte Brontë, Jane Eyre"],
+  ["I am not afraid of storms, for I am learning how to sail my ship.", "Louisa May Alcott, Little Women"],
+  ["Isn't it nice to think that tomorrow is a new day with no mistakes in it yet?", "L.M. Montgomery, Anne of Green Gables"],
+  ["It is only with the heart that one can see rightly; what is essential is invisible to the eye.", "Antoine de Saint-Exupéry, The Little Prince"],
+  ["You become responsible, forever, for what you have tamed.", "Antoine de Saint-Exupéry, The Little Prince"],
+  ["You have brains in your head. You have feet in your shoes. You can steer yourself any direction you choose.", "Dr. Seuss, Oh, the Places You'll Go!"],
+  ["Unless someone like you cares a whole awful lot, nothing is going to get better. It's not.", "Dr. Seuss, The Lorax"],
+  ["Those who don't believe in magic will never find it.", "Roald Dahl, The Minpins"],
+  ["It is not often that someone comes along who is a true friend and a good writer. Charlotte was both.", "E.B. White, Charlotte's Web"],
+  ["Why, sometimes I've believed as many as six impossible things before breakfast.", "Lewis Carroll, Through the Looking-Glass"],
+  ["There is nothing, absolutely nothing, half so much worth doing as simply messing about in boats.", "Kenneth Grahame, The Wind in the Willows"],
+  ["Until I feared I would lose it, I never loved to read. One does not love breathing.", "Harper Lee, To Kill a Mockingbird"],
+  ["Words are, in my not-so-humble opinion, our most inexhaustible source of magic.", "J.K. Rowling, Harry Potter and the Deathly Hallows"],
+  ["It takes a great deal of bravery to stand up to our enemies, but just as much to stand up to our friends.", "J.K. Rowling, Harry Potter and the Philosopher's Stone"],
+];
+const verseMore = [
+  ["To strive, to seek, to find, and not to yield.", "Alfred Tennyson, Ulysses"],
+  ["The world is so full of a number of things, I'm sure we should all be as happy as kings.", "Robert Louis Stevenson, A Child's Garden of Verses (Happy Thought)"],
+  ["A thing of beauty is a joy for ever.", "John Keats, Endymion"],
+  ["There is no Frigate like a Book to take us Lands away.", "Emily Dickinson"],
+  ["I took the one less traveled by, and that has made all the difference.", "Robert Frost, The Road Not Taken"],
+  ["Lives of great men all remind us we can make our lives sublime.", "H.W. Longfellow, A Psalm of Life"],
+  ["Ah, but a man's reach should exceed his grasp, or what's a heaven for?", "Robert Browning, Andrea del Sarto"],
+  ["If you can keep your head when all about you are losing theirs and blaming it on you.", "Rudyard Kipling, If"],
+  ["Where the mind is without fear and the head is held high.", "Rabindranath Tagore, Gitanjali"],
+  ["Let me not pray to be sheltered from dangers, but to be fearless in facing them.", "Rabindranath Tagore, Fruit-Gathering"],
+  ["All the world's a stage, and all the men and women merely players.", "William Shakespeare, As You Like It"],
+  ["To thine own self be true.", "William Shakespeare, Hamlet"],
+  ["Though she be but little, she is fierce.", "William Shakespeare, A Midsummer Night's Dream"],
+];
+const essaysMore = [
+  ["We know what we are, but know not what we may be.", "William Shakespeare, Hamlet"],
+  ["Courage is not simply one of the virtues, but the form of every virtue at the testing point.", "C.S. Lewis, The Screwtape Letters"],
+  ["Reading maketh a full man; conference a ready man; and writing an exact man.", "Francis Bacon, Of Studies"],
+  ["Some books are to be tasted, others to be swallowed, and some few to be chewed and digested.", "Francis Bacon, Of Studies"],
+  ["Nothing great was ever achieved without enthusiasm.", "Ralph Waldo Emerson, Essays (Circles)"],
+  ["I cannot live without books.", "Thomas Jefferson, letter to John Adams, 1815"],
+  ["I learned that courage was not the absence of fear, but the triumph over it.", "Nelson Mandela, Long Walk to Freedom"],
+  ["There is no greater agony than bearing an untold story inside you.", "Maya Angelou, I Know Why the Caged Bird Sings"],
+  ["I have always imagined that Paradise will be a kind of library.", "Jorge Luis Borges, Poem of the Gifts"],
+  ["How wonderful it is that nobody need wait a single moment before starting to improve the world.", "Anne Frank, The Diary of a Young Girl"],
+  ["I went to the woods because I wished to live deliberately.", "Henry David Thoreau, Walden"],
+];
+export const QUOTES = mix(tolkien, narnia, lit, modern, ideas, bible, church, lewisMore, tolkienMore, novelsMore, verseMore, essaysMore);

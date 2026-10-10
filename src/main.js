@@ -1,6 +1,6 @@
 import './style.css';
-import { api, setToken, lookup } from './api.js';
-import { startScan, stopScan } from './scanner.js';
+import { api, setToken, lookup, newId, ping } from './api.js';
+const scanner = () => import('./scanner.js');   // the scanner is only downloaded when someone scans
 import { QUOTES } from './quotes.js';
 import { T } from './i18n.js';
 
@@ -36,18 +36,23 @@ const LANG_CODE = { en: 'English', ta: 'Tamil', hi: 'Hindi' };
 const CAT_MAP = [['mystery', 'Mystery'], ['detective', 'Mystery'], ['science fiction', 'Science Fiction'], ['fantasy', 'Fantasy'], ['historical', 'Historical Fiction'],
   ['biograph', 'Biographies'], ['memoir', 'Biographies'], ['poetry', 'Poetry'], ['fairy', 'Folktale'], ['folk', 'Folktale'], ['religio', 'Religious Fiction'], ['christian', 'Religious Fiction']];
 const ROLES = {
-  student: { icon: '', get name() { return tr('role_student'); }, get desc() { return tr('desc_student'); } },
-  librarian: { icon: '', get name() { return tr('role_librarian'); }, get desc() { return tr('desc_librarian'); } },
-  principal: { icon: '', get name() { return tr('role_principal'); }, get desc() { return tr('desc_principal'); } },
-  admin: { icon: '', get name() { return tr('role_admin'); }, get desc() { return tr('desc_admin'); } }
+  student: { get name() { return tr('role_student'); } },
+  librarian: { get name() { return tr('role_librarian'); } },
+  principal: { get name() { return tr('role_principal'); } },
+  admin: { get name() { return tr('role_admin'); } }
 };
 const TABS = {
   student: [['catalogue', 'tab_cat', 'books'], ['list', 'tab_list', 'heart']],
   staff: [['dashboard', 'Home', 'home'], ['checkout', 'Check out', 'out'], ['records', 'Records', 'ledger'], ['catalogue', 'Books', 'books'], ['add', 'Add', 'plus']]
 };
 
+// The owner sign-in has no link anywhere. It opens only at this hidden address, e.g. https://your-site.vercel.app/#owner
+// Change the word to something only you know. The password is the real protection; this just keeps the door out of sight.
+const OWNER_HASH = '#owner';
+addEventListener('hashchange', () => { if (location.hash === OWNER_HASH && !S.role) { S.login = 'admin'; render(); } });
+const clearHash = () => history.replaceState(null, '', location.pathname + location.search);
 const store = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
-const S = { role: null, tab: 'catalogue', books: [], checkouts: [], genres: [], q: '', avail: '', sg: '', fg: [], fs: [], open: null, more: false, lng: '', age: '', editId: null, theme: store.get('theme2', 'light'), display: false, loading: false, list: [], me: null, listLogin: null, surprise: null, report: null, reports: [], canInstall: false, cq: '', rq: '', roll: '', days: 14, pick: null,
+const S = { role: null, tab: 'catalogue', books: [], checkouts: [], genres: [], q: '', avail: '', fg: [], fs: [], open: null, more: false, lng: '', age: '', editId: null, theme: store.get('theme2', 'light'), display: false, loading: false, loadedAt: 0, list: [], me: null, listLogin: null, surprise: null, report: null, reports: [], canInstall: false, cq: '', rq: '', roll: '', days: 14, pick: null,
   login: null, confirm: null, scanning: false, draft: null, results: [], sticky: { genre: 'Fiction', age: '', cond: 'Good', lang: 'English' } };
 
 const isStaff = () => S.role && S.role !== 'student';
@@ -78,12 +83,18 @@ function toast(msg, type = 'info') {
 }
 
 const loadReports = async () => { S.reports = await api('getReports'); };
-async function load() {
-  const d = await api('getAll');
+function applyAll(d) {
   // Same rule as your old app: anything that is not exactly 'No' counts as available.
   S.books = (d.inventory || []).filter(b => b.BookID && b.BookID !== 'REMOVED').map(b => ({ ...b, Available: b.Available === 'No' ? 'No' : 'Yes' }));
   S.checkouts = d.checkouts || [];
   S.genres = d.genres || [];
+  S.loadedAt = Date.now();
+}
+// Loads the library once, then reuses it for 45 seconds. Saves update the screen directly, so no reload is needed after them.
+let loadP = null;
+function load({ force = false } = {}) {
+  if (!force && S.loadedAt && Date.now() - S.loadedAt < 45000) return Promise.resolve();
+  return loadP || (loadP = api('getAll').then(applyAll).finally(() => { loadP = null; }));
 }
 
 // ───────── Views ─────────
@@ -121,20 +132,20 @@ const checkoutList = () => {
 };
 const recordList = () => {
   const q = S.rq.toLowerCase().trim();
-  const rows = S.checkouts.filter(c => !q || c.RollNumber.toLowerCase().includes(q) || c.Title.toLowerCase().includes(q)).sort((a, b) => b.CheckoutDate.localeCompare(a.CheckoutDate)).slice(0, 300);
+  const rows = S.checkouts.filter(c => !q || c.RollNumber.toLowerCase().includes(q) || titleOf(c).toLowerCase().includes(q)).sort((a, b) => b.CheckoutDate.localeCompare(a.CheckoutDate)).slice(0, 300);
   if (!rows.length) return `<ul class="grid gap-3">${empty('No records yet.')}</ul>`;
   const chip = c => { const st = state(c), d = daysLeft(c.DueDate); return st === 'returned' ? '<span class="pill">Returned</span>' : st === 'overdue' ? `<span class="pill bad">${-d}d overdue</span>` : `<span class="pill ${d <= 3 ? 'warn' : 'ok'}">Due in ${d}d</span>`; };
   const ret = c => state(c) !== 'returned' ? `<button class="btn-gold !min-h-9 !py-1 text-xs" data-act="return" data-tip="Mark this book as returned" data-id="${esc(c.CheckoutID)}">Return</button>` : '';
-  const cards = rows.map(c => `<li class="card flex items-center justify-between gap-3"><div class="min-w-0"><p class="font-bold text-navy">${esc(c.Title)}</p><p class="text-sm text-slate-500">Roll ${esc(c.RollNumber)}, out ${showDate(c.CheckoutDate)}, due ${showDate(c.DueDate)}</p></div><div class="flex flex-col items-end gap-2">${chip(c)}${ret(c)}</div></li>`).join('');
+  const cards = rows.map(c => `<li class="card flex items-center justify-between gap-3"><div class="min-w-0"><p class="font-bold text-navy">${esc(titleOf(c))}</p><p class="text-sm text-slate-500">Roll ${esc(c.RollNumber)}, out ${showDate(c.CheckoutDate)}, due ${showDate(c.DueDate)}</p></div><div class="flex flex-col items-end gap-2">${chip(c)}${ret(c)}</div></li>`).join('');
   const td = 'px-3 py-2';
-  const trs = rows.map(c => `<tr class="border-b border-stone-100"><td class="${td} font-bold">${esc(c.RollNumber)}</td><td class="${td}">${esc(c.Title)}</td><td class="${td} font-mono text-xs">${esc(c.BookID)}</td><td class="${td}">${showDate(c.CheckoutDate)}</td><td class="${td}">${showDate(c.DueDate)}</td><td class="${td}">${chip(c)}</td><td class="${td} text-right">${ret(c)}</td></tr>`).join('');
+  const trs = rows.map(c => `<tr class="border-b border-stone-100"><td class="${td} font-bold">${esc(c.RollNumber)}</td><td class="${td}">${esc(titleOf(c))}</td><td class="${td} font-mono text-xs">${esc(c.BookID)}</td><td class="${td}">${showDate(c.CheckoutDate)}</td><td class="${td}">${showDate(c.DueDate)}</td><td class="${td}">${chip(c)}</td><td class="${td} text-right">${ret(c)}</td></tr>`).join('');
   return `<ul class="grid gap-3 lg:hidden">${cards}</ul><div class="card hidden overflow-x-auto !p-0 lg:block"><table class="w-full text-left text-sm"><thead class="bg-ink text-white"><tr>${['Roll no.', 'Book', 'Book ID', 'Checked out', 'Due', 'Status', ''].map(h => `<th class="px-3 py-2.5 font-bold">${h}</th>`).join('')}</tr></thead><tbody>${trs}</tbody></table></div>`;
 };
 
 const favBtn = (b, c = '!px-2.5 !py-1 text-xs') => `<button class="btn ${c}" data-act="fav" data-tip="Save to, or remove from, my reading list" data-id="${esc(b.BookID)}">${ic('heart', 'h-4 w-4', S.list.includes(b.BookID))} ${S.list.includes(b.BookID) ? tr('saved') : tr('save')}</button>`;
 const noMatch = () => `<li class="card col-span-full text-center text-slate-600">${tr('nomatch')}<br><button class="btn mt-3" data-act="report-open" data-tip="Report a problem or a missing book" data-id="t_missing">${ic('flag')} ${tr('report')}</button></li>`;
 const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-const installBlock = () => standalone() ? '' : S.canInstall ? `<div class="mt-8 text-center"><button class="btn-gold" data-act="install" data-tip="Add this site to your home screen">${ic('install')} ${tr('install')}</button></div>` : /iphone|ipad|ipod/i.test(navigator.userAgent) ? `<p class="mt-8 text-center text-sm text-white/60">${tr('iosHint')}</p>` : '';
+const installBlock = () => standalone() ? '' : S.canInstall ? `<div class="mt-8 text-center md:hidden"><button class="btn-gold" data-act="install" data-tip="Add this site to your home screen">${ic('install')} ${tr('install')}</button></div>` : /iphone|ipad|ipod/i.test(navigator.userAgent) ? `<p class="mt-8 text-center text-sm text-white/60">${tr('iosHint')}</p>` : '';
 const daySeed = () => { const d = new Date(); return d.getFullYear() * 400 + d.getMonth() * 32 + d.getDate(); };
 const TILES = ['tile-b', 'tile-c', 'tile-a', 'tile-e'];
 const discover = () => {
@@ -143,7 +154,7 @@ const discover = () => {
   const count = {}; S.books.forEach(x => String(x.SubGenre || '').split('|').filter(Boolean).forEach(g => { count[g] = (count[g] || 0) + 1; }));
   const genres = Object.entries(count).sort((x, y) => y[1] - x[1]).slice(0, S.role === 'student' ? 7 : 8);
   return `<section class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-    <div class="card tile-e relative col-span-2 flex flex-col justify-between gap-8 overflow-hidden sm:col-span-4 sm:flex-row sm:items-end"><img src="/school.jpg" alt="" onerror="this.remove()" class="absolute inset-0 h-full w-full object-cover opacity-20">
+    <div class="card tile-e relative col-span-2 flex flex-col justify-between gap-8 overflow-hidden sm:col-span-4 sm:flex-row sm:items-end"><img src="/school.jpg" alt="" data-hide-on-error class="absolute inset-0 h-full w-full object-cover opacity-20">
       <div class="relative"><h2 class="font-display text-4xl leading-tight sm:text-6xl">${tr('hero')}</h2><p class="mt-2 text-white/80">${S.books.length} ${tr('booksWord')}, ${open.length} ${tr('availnow')}</p></div>
       <button data-act="surprise" data-tip="Pick a random available book for me" class="btn-gold relative shrink-0">${ic('dice')} ${tr('surprise')}</button></div>
     ${b ? `<div class="card tile-d ${qq ? 'col-span-2' : 'col-span-2 sm:col-span-4'}"><h2 class="font-display text-xl">${tr('bod')}</h2><p class="font-display mt-3 text-3xl leading-tight">${esc(b.Title)}</p><p class="mt-1">${esc(b.Author)}</p><div class="mt-3 flex flex-wrap gap-1">${sgs}<span class="pill ok">${tr('availnow')}</span></div></div>` : ''}
@@ -161,19 +172,42 @@ const filterBar = () => {
   const sel = (id, label, opts, cur) => `<select id="${id}" class="input !min-h-10 !w-auto !py-1.5 text-sm" aria-label="${label}"><option value="">${label}: all</option>${opts.map(o => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
   return `<div class="relative mt-2 flex flex-wrap items-center gap-2">${dd('g', 'Genre', genres, S.fg)}${dd('s', 'Sub-genre', subOptions(), S.fs)}<button class="btn !min-h-10" data-act="more" data-tip="Show language and age group filters" aria-expanded="${S.more}">More filters${ic('chevron', 'h-4 w-4')}</button>${any ? '<button class="btn !min-h-10" data-act="clear-all" data-tip="Remove every filter">Clear all</button>' : ''}</div>${S.more ? `<div class="mt-2 flex flex-wrap gap-2">${sel('lng-sel', 'Language', LANGS, S.lng)}${sel('age-sel', 'Age group', AGES, S.age)}</div>` : ''}`;
 };
+let tmap = null, tmapFor = null, tmapN = -1;
+const titleOf = c => {   // a checkout shows the book's current title, so edits to a title reach old records too
+  if (tmapFor !== S.books || tmapN !== S.books.length) { tmap = new Map(S.books.map(b => [b.BookID, b])); tmapFor = S.books; tmapN = S.books.length; }
+  return tmap.get(c.BookID)?.Title || titleOf(c);
+};
 const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const spark = v => { const mx = Math.max(1, ...v), pts = v.map((n, i) => `${(i / (v.length - 1)) * 120},${36 - (n / mx) * 32}`).join(' '); return `<svg viewBox="0 0 120 40" class="h-12 w-32 text-gold" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><polyline points="${pts}"/></svg>`; };
 const strip = (title, books) => books.length ? `<section class="mb-6"><h2 class="font-display mb-2 text-2xl text-navy">${title}</h2><ul class="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">${books.map(b => `<li class="card w-44 shrink-0 !p-3"><p class="line-clamp-2 font-bold text-navy">${esc(b.Title)}</p><p class="line-clamp-1 text-sm text-slate-500">${esc(b.Author)}</p><span class="pill mt-2 ${b.Available === 'Yes' ? 'ok' : 'warn'}">${b.Available === 'Yes' ? tr('available') : tr('out')}</span></li>`).join('')}</ul></section>` : '';
 const strips = () => strip(tr('newArr'), S.books.slice(-8).reverse()) + strip(tr('mostB'), S.books.filter(b => +b.Borrows > 0).sort((a, b) => b.Borrows - a.Borrows).slice(0, 8));
 const neverBorrowed = () => { const seen = new Set(S.checkouts.map(c => c.BookID)); return S.books.filter(b => !seen.has(b.BookID)); };
 const loansOf = r => S.checkouts.filter(c => r && c.RollNumber === r && c.Returned !== 'Yes');
-const loansBox = () => { const r = S.roll.trim(), l = loansOf(r); if (!r) return ''; const over = l.filter(c => daysLeft(c.DueDate) < 0).length; return `<div class="card mb-4 ${over || l.length >= LOAN_LIMIT ? 'border-2 border-red-600' : ''}"><p class="font-bold text-navy">Roll ${esc(r)} has ${l.length} ${l.length === 1 ? 'book' : 'books'} out${over ? `, ${over} overdue` : ''}</p>${l.map(c => `<p class="text-sm text-slate-500">${esc(c.Title)}, due ${showDate(c.DueDate)}</p>`).join('')}</div>`; };
+const loansBox = () => { const r = S.roll.trim(), l = loansOf(r); if (!r) return ''; const over = l.filter(c => daysLeft(c.DueDate) < 0).length; return `<div class="card mb-4 ${over || l.length >= LOAN_LIMIT ? 'border-2 border-red-600' : ''}"><p class="font-bold text-navy">Roll ${esc(r)} has ${l.length} ${l.length === 1 ? 'book' : 'books'} out${over ? `, ${over} overdue` : ''}</p>${l.map(c => `<p class="text-sm text-slate-500">${esc(titleOf(c))}, due ${showDate(c.DueDate)}</p>`).join('')}</div>`; };
 const recentRolls = () => { const r = store.get('rolls', []); return r.length ? `<div class="mb-3 flex flex-wrap gap-2">${r.map(x => `<button class="pill !min-h-9 !px-3" data-act="roll" data-tip="Use this roll number" data-id="${esc(x)}">${esc(x)}</button>`).join('')}</div>` : ''; };
-const overdueText = () => { const by = {}; S.checkouts.filter(c => state(c) === 'overdue').forEach(c => (by[c.RollNumber] ||= []).push(c)); return Object.entries(by).map(([r, l]) => `Roll ${r}: ` + l.map(c => `${c.Title} (due ${showDate(c.DueDate)}, ${-daysLeft(c.DueDate)} days late)`).join('; ')).join('\n'); };
+const overdueText = () => { const by = {}; S.checkouts.filter(c => state(c) === 'overdue').forEach(c => (by[c.RollNumber] ||= []).push(c)); return Object.entries(by).map(([r, l]) => `Roll ${r}: ` + l.map(c => `${titleOf(c)} (due ${showDate(c.DueDate)}, ${-daysLeft(c.DueDate)} days late)`).join('; ')).join('\n'); };
 const queued = () => store.get('queue', []);
+const retry = async fn => { try { return await fn(); } catch (e) { if (!e.offline) throw e; await new Promise(r => setTimeout(r, 1500)); return fn(); } };
+let listChain = Promise.resolve(), saveChain = Promise.resolve(), savingCount = 0;
+const showSaving = () => { const el = $('#saving'); if (!el) return; el.classList.toggle('hidden', !savingCount); el.textContent = savingCount ? `Saving ${savingCount}...` : ''; };
+const draftFromBook = b => ({ ...b, SubGenre: String(b.SubGenre || '').split('|').filter(Boolean) });
+function saveBook(book, rid, row) {
+  savingCount++; showSaving();
+  saveChain = saveChain.then(async () => {
+    try { const r = await retry(() => api('addBook', { book, rid })); row.BookID = r.bookId; }
+    catch (e) {
+      if (e.offline) { row.BookID = '(waiting to sync)'; store.set('queue', [...queued(), { book, rid }]); toast('No connection. Saved on this phone, it will sync when you are online.', 'info'); }
+      else { S.books = S.books.filter(x => x !== row); if (!S.draft.Title) S.draft = draftFromBook(book); toast(`Could not save "${book.Title}": ${e.message}`, 'error'); }
+    } finally { savingCount--; showSaving(); if (!S.scanning && S.tab === 'catalogue') refreshList('#list', bookList); }
+  });
+}
+addEventListener('beforeunload', e => { if (savingCount) { e.preventDefault(); e.returnValue = ''; } });
 async function syncQueue() {
-  let q = queued(); if (!q.length || !S.role || S.role === 'student') return;
-  try { while (q.length) { await api('addBook', { book: q[0] }); q = q.slice(1); store.set('queue', q); } toast('Saved books synced.', 'success'); await load(); render(); } catch {}
+  let q = queued(); if (!q.length || !S.role || S.role === 'student' || S.role === 'admin') return;
+  try {
+    while (q.length) { const it = q[0].book ? q[0] : { book: q[0], rid: newId() }; await api('addBook', { book: it.book, rid: it.rid }); q = q.slice(1); store.set('queue', q); }
+    toast('Saved books synced.', 'success'); await load({ force: true }); render();
+  } catch {}
 }
 
 const tally = a => { const m = {}; a.forEach(k => { if (k) m[k] = (m[k] || 0) + 1; }); return Object.entries(m).sort((x, y) => y[1] - x[1]).slice(0, 8); };
@@ -188,15 +222,15 @@ const views = {
   dashboard: () => {
     const act = S.checkouts.filter(c => c.Returned !== 'Yes'), over = act.filter(c => daysLeft(c.DueDate) < 0), soon = act.filter(c => { const d = daysLeft(c.DueDate); return d >= 0 && d <= 3; });
     const days = Array.from({ length: 14 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 13 + i); return S.checkouts.filter(c => c.CheckoutDate === isoDay(d)).length; });
-    const row = c => `<li class="flex justify-between gap-2 border-b border-stone-100 py-2 text-sm"><span class="truncate">${esc(c.Title)}</span><span class="shrink-0 text-slate-500">Roll ${esc(c.RollNumber)}, ${showDate(c.DueDate)}</span></li>`;
+    const row = c => `<li class="flex justify-between gap-2 border-b border-stone-100 py-2 text-sm"><span class="truncate">${esc(titleOf(c))}</span><span class="shrink-0 text-slate-500">Roll ${esc(c.RollNumber)}, ${showDate(c.DueDate)}</span></li>`;
     const none = t => `<p class="text-sm text-slate-500">${t}</p>`;
-    const stat = (n, l, cls = '') => `<div class="card flex flex-col justify-between"><p class="text-sm font-bold text-slate-600">${l}</p><p class="font-display mt-4 text-5xl font-bold ${cls}">${n}</p></div>`;
+    const stat = (n, l, cls = '', bt = '') => `<div class="card ${bt} flex flex-col justify-between"><p class="text-sm font-bold text-slate-600">${l}</p><p class="font-display mt-4 text-5xl font-bold ${cls}">${n}</p></div>`;
     const month = tally(S.checkouts.map(x => x.CheckoutDate.slice(0, 7))).sort((a, b) => a[0].localeCompare(b[0]));
     return `<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <div class="card col-span-2 flex flex-col justify-between gap-4"><div><h1 class="h1">Today at the library</h1><p class="text-slate-500">${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</p></div>
-        <div class="flex flex-wrap gap-2">${S.role === 'librarian' ? `<button class="btn-gold" data-act="tab" data-id="checkout" data-tip="Go to the check out screen">${ic('out')} Check out</button>` : ''}<button class="btn" data-act="tab" data-id="add" data-tip="Go to add books">${ic('scan')} Add books</button></div></div>
+      <div class="card bt-e col-span-2 flex flex-col justify-between gap-4"><div><h1 class="h1">Today at the library</h1><p class="text-slate-500">${new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</p></div>
+        <div class="flex flex-wrap gap-2">${S.role === 'librarian' ? `<button class="btn-gold" data-act="tab" data-id="checkout" data-tip="Go to the check out screen">${ic('out')} Check out</button>` : ''}<button class="btn" data-act="tab" data-id="add" data-tip="Go to add books">${ic('scan')} Add books</button><button class="btn" data-act="refresh" data-tip="Load the latest data from the library">Refresh</button></div></div>
       <div class="card col-span-2"><p class="text-sm font-bold text-slate-600">Checkouts, last 14 days</p><div class="mt-3 flex items-end justify-between gap-3"><p class="font-display text-5xl font-bold">${days.reduce((a, b) => a + b, 0)}</p>${spark(days)}</div></div>
-      ${stat(S.books.length, 'Books')}${stat(act.length, 'Checked out')}${stat(soon.length, 'Due in 3 days', 'text-amber-700')}${stat(over.length, 'Overdue', 'text-red-800')}
+      ${stat(S.books.length, 'Books', '', 'bt-a')}${stat(act.length, 'Checked out', '', 'bt-b')}${stat(soon.length, 'Due in 3 days', 'text-amber-700', 'bt-d')}${stat(over.length, 'Overdue', 'text-red-800', 'bt-c')}
       <div class="card col-span-2 row-span-2"><div class="mb-2 flex items-center justify-between gap-2"><h2 class="font-display text-xl text-navy">Overdue</h2><div class="flex gap-2"><button class="btn !min-h-9 !px-3" data-act="copy-overdue" data-tip="Copy the overdue list to paste into a message">Copy</button><button class="btn !min-h-9 !px-3" data-act="print-overdue" data-tip="Print the overdue list">Print</button></div></div><ul>${over.slice(0, 8).map(row).join('') || none('Nothing overdue.')}</ul></div>
       <div class="card col-span-2"><h2 class="mb-2 font-display text-xl text-navy">Due soon</h2><ul>${soon.slice(0, 5).map(row).join('') || none('Nothing due in the next 3 days.')}</ul></div>
       <div class="card col-span-2"><h2 class="mb-2 font-display text-xl text-navy">Newest additions</h2><ul>${S.books.slice(-5).reverse().map(b => `<li class="truncate border-b border-stone-100 py-1.5 text-sm">${esc(b.Title)}</li>`).join('') || none('No books yet.')}</ul></div>
@@ -223,9 +257,14 @@ const views = {
     const rows = S.list.map(id => S.books.find(b => b.BookID === id)).filter(Boolean);
     return `<div class="flex flex-wrap items-center justify-between gap-3"><h1 class="h1">${tr('tab_list')}</h1><div class="flex items-center gap-3 text-sm text-slate-500">Roll ${esc(S.me.roll)}<button class="btn !min-h-9" data-act="list-lock" data-tip="Lock your list on this device">Lock</button></div></div><ul class="mt-4 grid gap-3 sm:grid-cols-2">${rows.length ? rows.map(b => bookCard(b, favBtn(b))).join('') : empty(tr('emptylist'))}</ul>`;
   },
+  reports: () => {
+    const rows = [...S.reports].sort((a, b) => (a.Status === 'Resolved') - (b.Status === 'Resolved') || b.Date.localeCompare(a.Date));
+    return `<h1 class="h1">Reports</h1><ul class="mt-4 grid gap-3">${rows.length ? rows.map(r => `<li class="card ${r.Status === 'Resolved' ? 'opacity-60' : ''}"><div class="flex flex-wrap items-center gap-2"><span class="pill ${r.Status === 'Resolved' ? 'ok' : 'warn'}">${esc(r.Status || 'Open')}</span><span class="pill">${esc(r.Type)}</span><span class="pill">${esc(r.Role)}</span><span class="text-xs text-slate-500">${showDate(r.Date)}</span></div>
+      <p class="mt-2 whitespace-pre-wrap text-sm">${esc(r.Message)}</p>${r.Contact ? `<p class="mt-1 text-xs text-slate-500">From: ${esc(r.Contact)}</p>` : ''}<button class="btn mt-3 !py-1 text-xs" data-act="resolve" data-id="${esc(r.ReportID)}" data-tip="Mark this report as done, or reopen it">${r.Status === 'Resolved' ? 'Reopen' : 'Mark resolved'}</button></li>`).join('') : empty('No reports yet.')}</ul>`;
+  },
   analytics: () => {
     const by = Object.fromEntries(S.books.map(b => [b.BookID, b])), c = S.checkouts;
-    const cards = [['Most borrowed books', tally(c.map(x => x.Title))], ['Checkouts by sub-genre', tally(c.flatMap(x => String((by[x.BookID] || {}).SubGenre || '').split('|')))],
+    const cards = [['Most borrowed books', tally(c.map(x => titleOf(x)))], ['Checkouts by sub-genre', tally(c.flatMap(x => String((by[x.BookID] || {}).SubGenre || '').split('|')))],
       ['Most active readers (roll no.)', tally(c.map(x => x.RollNumber))], ['Checkouts per month', tally(c.map(x => x.CheckoutDate.slice(0, 7))).sort((a, b) => a[0].localeCompare(b[0]))]];
     return `<h1 class="h1">Analytics</h1><div class="my-4 flex justify-end"><button class="btn" data-act="csv" data-tip="Download all checkouts as a spreadsheet file">${ic('install')} Export checkouts (CSV)</button></div><div class="grid gap-4 sm:grid-cols-2">${cards.map(([t, r]) => `<div class="card"><h2 class="mb-3 font-semibold text-navy">${t}</h2>${bars(r)}</div>`).join('')}</div>`;
   },
@@ -276,11 +315,11 @@ function applyItem(it, isbn) {
 }
 
 // ───────── Shell & render ─────────
-const landing = () => `<main class="relative min-h-dvh overflow-hidden bg-ink p-6 text-white print:hidden"><img src="/school.jpg" alt="" onerror="this.remove()" class="absolute inset-0 h-full w-full object-cover opacity-20">
+const landing = () => `<main class="relative min-h-dvh overflow-hidden bg-ink p-6 text-white print:hidden"><img src="/school.jpg" alt="" data-hide-on-error class="absolute inset-0 h-full w-full object-cover opacity-20">
   <div class="relative mx-auto flex min-h-[calc(100dvh-3rem)] max-w-3xl flex-col justify-between gap-10"><div class="flex justify-end"><button class="btn !min-h-10 !px-3" data-act="display" data-tip="Change the colour theme" aria-label="Display settings">${ic('display')}</button></div>
   <div><img src="/logo.png" alt="Santa Maria School crest" class="mb-6 h-28 w-auto"><h1 class="font-display text-5xl sm:text-7xl">${tr('library')}</h1><p class="mt-3 text-lg text-white/75">Santa Maria Matriculation Higher Secondary School</p></div>
   <div class="grid gap-5"><button data-act="role" data-id="student" class="btn-gold !min-h-16 !justify-between !text-xl"><span>${tr('role_student')}</span>${ic('books', 'h-7 w-7')}</button>
-  <div class="flex flex-wrap items-center gap-3 text-sm text-white/75"><span>${tr('staff')}</span><button class="btn !min-h-10" data-act="role" data-id="librarian">${tr('role_librarian')}</button><button class="btn !min-h-10" data-act="role" data-id="principal">${tr('role_principal')}</button><button class="ml-auto text-xs text-white/60 underline" data-act="role" data-id="admin" data-tip="Owner sign in, for reports only">Owner</button></div>${installBlock()}</div></div></main>`;
+  <div class="flex flex-wrap items-center gap-3 text-sm text-white/75"><span>${tr('staff')}</span><button class="btn !min-h-10" data-act="role" data-id="librarian">${tr('role_librarian')}</button><button class="btn !min-h-10" data-act="role" data-id="principal">${tr('role_principal')}</button></div>${installBlock()}</div></div></main>`;
 
 function shell() {
   const tabs = tabsFor(), staff = isStaff(), v = views[S.tab](), narrow = staff && ['add', 'checkout'].includes(S.tab);
@@ -298,7 +337,7 @@ function shell() {
 }
 
 function overlays() {
-  if (S.scanning) return `<div class="fixed inset-0 z-50 flex flex-col bg-black"><p class="p-4 text-center text-sm text-white">Point the camera at the barcode on the back of the book</p><div id="reader" class="flex-1"></div><button class="btn m-4" data-act="cancel-scan">Cancel</button></div>`;
+  if (S.scanning) return `<div role="dialog" aria-modal="true" aria-label="Barcode scanner" class="fixed inset-0 z-50 flex flex-col bg-black"><p class="p-4 text-center text-sm text-white">Point the camera at the barcode on the back of the book</p><div id="reader" class="flex-1"></div><button class="btn m-4" data-act="cancel-scan">Cancel</button></div>`;
   const box = inner => `<div class="fixed inset-0 z-50 grid place-items-center bg-ink/70 p-4"><div role="dialog" aria-modal="true" class="w-full max-w-sm rounded-2xl bg-surface p-6">${inner}</div></div>`;
   if (S.login) return box(`<h2 class="font-display text-2xl text-navy">${ROLES[S.login].name}</h2><label class="label mt-4" for="pw">${tr('password')}</label><input id="pw" type="password" class="input" autocomplete="current-password">
     <p id="lerr" class="mt-2 hidden text-sm text-red-800"></p><button class="btn-gold mt-4 w-full" data-act="login">${tr('signin')}</button><button class="btn mt-2 w-full" data-act="close">${tr('back2')}</button>`);
@@ -331,6 +370,8 @@ function render() {
   $('#app').innerHTML = (S.role ? shell() : landing()) + overlays();
   if (S.login) $('#pw')?.focus();
   if (S.listLogin) $('#ll-roll')?.focus();
+  const dlg = document.querySelector('[role=dialog]');
+  if (dlg && !dlg.contains(document.activeElement)) dlg.querySelector('input,select,textarea,button')?.focus();
 }
 const refreshList = (id, fn) => { const el = $(id); if (el) el.innerHTML = fn(); };
 const guard = async (fn) => { try { await fn(); } catch (e) { toast(e.message, 'error'); if (/sign in again/i.test(e.message)) H.logout(); } };
@@ -339,7 +380,7 @@ const guard = async (fn) => { try { await fn(); } catch (e) { toast(e.message, '
 let busy = false;
 async function onCode(code) {
   if (busy) return; busy = true;
-  await stopScan(); S.scanning = false;
+  await (await scanner()).stopScan(); S.scanning = false;
   S.draft.ISBN = code; toast('Looking up ' + code + '…');
   const r = await lookup({ isbn: code });
   if (r.items?.length) applyItem(r.items[0], code); else toast('Not found online. Fill in the details by hand.', 'info');
@@ -347,34 +388,56 @@ async function onCode(code) {
 }
 async function openScanner() {
   readForm(); S.scanning = true; render();
-  try { await startScan('reader', onCode); } catch { S.scanning = false; render(); toast('Camera unavailable. Allow camera access, or type the details.', 'error'); }
+  try { await (await scanner()).startScan('reader', onCode); } catch { S.scanning = false; render(); toast('Camera unavailable. Allow camera access, or type the details.', 'error'); }
 }
 
 const H = {
   role: id => { S.login = id; render(); },
-  close: () => { S.listLogin = null; S.open = null; S.display = false; S.login = null; S.confirm = null; S.report = null; S.surprise = null; render(); },
+  close: () => { if (S.login === 'admin') clearHash(); S.listLogin = null; S.open = null; S.display = false; S.login = null; S.confirm = null; S.report = null; S.surprise = null; render(); },
   async login() {
     try {
-      const d = await api('login', { role: S.login, password: $('#pw').value });
-      setToken(d.token); S.role = S.login; S.login = null; S.tab = S.role === 'student' ? 'catalogue' : S.role === 'admin' ? 'reports' : 'dashboard'; S.draft = newDraft();
-      S.loading = true; render(); try { await (S.role === 'admin' ? loadReports() : load()); } catch (e) { toast(e.message, 'error'); } S.loading = false; render(); syncQueue();
+      const role = S.login, d = await api('login', { role, password: $('#pw').value, withData: role !== 'admin' });   // sign-in and data in one request
+      setToken(d.token); if (role === 'admin') clearHash(); S.role = role; S.login = null; S.tab = role === 'student' ? 'catalogue' : role === 'admin' ? 'reports' : 'dashboard'; S.draft = newDraft();
+      if (d.data) applyAll(d.data);
+      S.loading = !d.data; render();
+      if (!d.data) { try { await (role === 'admin' ? loadReports() : load({ force: true })); } catch (e) { toast(e.message, 'error'); } S.loading = false; render(); }
+      syncQueue();
     } catch (e) { const el = $('#lerr'); el.textContent = e.message; el.classList.remove('hidden'); }
   },
-  logout: () => { setToken(null); Object.assign(S, { role: null, me: null, list: [], listLogin: null, editId: null, sg: '', books: [], checkouts: [], genres: [], pick: null, roll: '', q: '', cq: '', rq: '' }); render(); },
-  tab: id => { readForm(); if (S.tab === 'add' && id !== 'add' && S.editId) { S.editId = null; S.draft = newDraft(); } S.tab = id; render(); if (id !== 'add') guard(async () => { await (S.role === 'admin' ? loadReports() : load()); if (S.tab === id) render(); }); },
+  logout: () => { setToken(null); Object.assign(S, { role: null, loadedAt: 0, me: null, list: [], listLogin: null, editId: null, books: [], checkouts: [], genres: [], pick: null, roll: '', q: '', cq: '', rq: '' }); render(); },
+  tab: id => { readForm(); if (S.tab === 'add' && id !== 'add' && S.editId) { S.editId = null; S.draft = newDraft(); } S.tab = id; render(); if (id !== 'add') guard(async () => { const was = S.loadedAt; await (S.role === 'admin' ? loadReports() : load()); if (S.tab === id && (S.role === 'admin' || S.loadedAt !== was)) render(); }); },
   pick: id => { S.pick = id; render(); },
   unpick: () => { S.pick = null; render(); },
   checkout: () => guard(async () => {
     if (!S.roll.trim()) throw new Error('Enter the roll number.');
     if (!S.pick) throw new Error('Select a book first.');
-    const held = loansOf(S.roll.trim()), late = held.filter(c => daysLeft(c.DueDate) < 0).length;
-    if ((late || held.length >= LOAN_LIMIT) && !confirm(`Roll ${S.roll.trim()} has ${held.length} book(s) out${late ? ` and ${late} overdue` : ''}. Check out anyway?`)) return;
-    const r = await api('checkout', { bookId: S.pick, roll: S.roll.trim(), days: +S.days || 14 });
-    store.set('rolls', [S.roll.trim(), ...store.get('rolls', []).filter(x => x !== S.roll.trim())].slice(0, 8)); S.pick = null; S.roll = ''; S.cq = ''; await load(); render(); toast(`Checked out. Due ${showDate(r.dueDate)}.`, 'success');
+    const roll = S.roll.trim(), held = loansOf(roll), late = held.filter(c => daysLeft(c.DueDate) < 0).length;
+    if ((late || held.length >= LOAN_LIMIT) && !confirm(`Roll ${roll} has ${held.length} book(s) out${late ? ` and ${late} overdue` : ''}. Check out anyway?`)) return;
+    // The screen updates at once; the save runs in the background and is undone if it fails.
+    const book = S.books.find(b => b.BookID === S.pick), days = +S.days || 14, rid = newId(), was = book.Available;
+    const rec = { CheckoutID: 'pending-' + rid, RollNumber: roll, BookID: book.BookID, Title: book.Title, CheckoutDate: isoDay(new Date()), DueDate: isoDay(new Date(Date.now() + days * 864e5)), Returned: 'No' };
+    book.Available = 'No'; S.checkouts = [...S.checkouts, rec];
+    store.set('rolls', [roll, ...store.get('rolls', []).filter(x => x !== roll)].slice(0, 8)); S.pick = null; S.roll = ''; S.cq = ''; render();
+    toast(`Checked out. Due ${showDate(rec.DueDate)}.`, 'success');
+    retry(() => api('checkout', { bookId: book.BookID, roll, days, rid })).then(r => { rec.CheckoutID = r.checkoutId; rec.DueDate = r.dueDate; })
+      .catch(e => { book.Available = was; S.checkouts = S.checkouts.filter(x => x !== rec); render(); toast(`Check out failed: ${e.message}`, 'error'); });
   }),
-  return: id => guard(async () => { await api('returnBook', { checkoutId: id }); await load(); render(); toast('Book returned.', 'success'); }),
+  return: id => {
+    const c = S.checkouts.find(x => x.CheckoutID === id); if (!c || c.Returned === 'Yes') return;
+    if (id.startsWith('pending-')) return toast('Still saving that checkout. Try again in a moment.');
+    const book = S.books.find(b => b.BookID === c.BookID), was = book?.Available, rid = newId();
+    c.Returned = 'Yes'; if (book) book.Available = 'Yes'; render(); toast('Book returned.', 'success');
+    retry(() => api('returnBook', { checkoutId: id, rid })).catch(e => {
+      if (/already returned/i.test(e.message)) return;
+      c.Returned = 'No'; if (book) book.Available = was; render(); toast(`Could not mark as returned: ${e.message}`, 'error');
+    });
+  },
   'ask-remove': id => { S.confirm = id; render(); },
-  remove: () => guard(async () => { await api('removeBook', { bookId: S.confirm }); S.confirm = null; await load(); render(); toast('Book removed.', 'success'); }),
+  remove: () => {
+    const id = S.confirm, i = S.books.findIndex(b => b.BookID === id); if (i < 0) return H.close();
+    const [gone] = S.books.splice(i, 1); S.confirm = null; render(); toast('Book removed.', 'success');
+    api('removeBook', { bookId: id }).catch(e => { S.books.splice(i, 0, gone); render(); toast(`Could not remove it: ${e.message}`, 'error'); });
+  },
   sg: id => { S.fg = []; S.fs = [id]; render(); },
   dd: id => { S.open = S.open === id ? null : id; render(); },
   fg: id => { const back = keepScroll(); S.fg = toggle(S.fg, id); S.fs = S.fs.filter(x => subOptions().includes(x)); render(); back(); },
@@ -391,26 +454,28 @@ const H = {
   addgenre: () => guard(async () => {
     const genre = $('#g-parent').value, name = $('#g-name').value.trim();
     if (subs(genre).some(s => s.toLowerCase() === name.toLowerCase())) throw new Error('That sub-genre already exists.');
-    await api('addGenre', { genre, subgenre: name }); await load(); render(); toast(`Added “${name}”.`, 'success');
+    await api('addGenre', { genre, subgenre: name }); S.genres = [...S.genres, { Genre: genre, SubGenre: name }]; render(); toast(`Added “${name}”.`, 'success');
   }),
   csv: () => {
     const q = v => { let s = String(v ?? ''); if (/^[=+\-@]/.test(s)) s = "'" + s; return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-    const rows = [['Roll', 'Title', 'BookID', 'Checked out', 'Due', 'Status'], ...S.checkouts.map(c => [c.RollNumber, c.Title, c.BookID, c.CheckoutDate, c.DueDate, state(c)])];
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([rows.map(r => r.map(q).join(',')).join('\n')], { type: 'text/csv' }));
+    const rows = [['Roll', 'Title', 'BookID', 'Checked out', 'Due', 'Status'], ...S.checkouts.map(c => [c.RollNumber, titleOf(c), c.BookID, c.CheckoutDate, c.DueDate, state(c)])];
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + rows.map(r => r.map(q).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' }));
     a.download = 'checkouts.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   },
   fav: (id, el) => {
     if (!S.me) { S.listLogin = { pending: id }; render(); return; }
-    const before = S.list; S.list = toggle(S.list, id);
-    if (S.tab === 'list' && !S.surprise) render(); else { const on = S.list.includes(id); el.innerHTML = ic('heart', 'h-4 w-4', on) + ' ' + tr(on ? 'saved' : 'save'); }
-    api('listSave', { roll: S.me.roll, pin: S.me.pin, books: S.list }).catch(e => { S.list = before; render(); toast(e.message, 'error'); });
+    const on = !S.list.includes(id), { roll, pin } = S.me;
+    S.list = on ? [...S.list, id] : S.list.filter(x => x !== id);
+    if (S.tab === 'list' && !S.surprise) render(); else el.innerHTML = ic('heart', 'h-4 w-4', on) + ' ' + tr(on ? 'saved' : 'save');
+    listChain = listChain.then(() => api('listToggle', { roll, pin, bookId: id, on }))   // one at a time, in the order tapped
+      .catch(e => { S.list = on ? S.list.filter(x => x !== id) : [...S.list, id]; render(); toast(e.message, 'error'); });
   },
   'list-open': () => { S.listLogin = { pending: null }; render(); },
   'list-go': async () => {
     const roll = $('#ll-roll').value.trim(), pin = $('#ll-pin').value.trim(), err = $('#ll-err'), pending = S.listLogin?.pending;
     try {
       const r = await api('listOpen', { roll, pin }); let books = r.books;
-      if (pending && !books.includes(pending)) { books = [...books, pending]; await api('listSave', { roll, pin, books }); }
+      if (pending && !books.includes(pending)) { await api('listToggle', { roll, pin, bookId: pending, on: true }); books = [...books, pending]; }
       S.me = { roll, pin }; S.list = books; S.listLogin = null; render();
       toast(r.isNew ? 'List created. Remember your PIN.' : 'Welcome back.', 'success');
     } catch (e) { err.textContent = e.message; err.classList.remove('hidden'); }
@@ -440,12 +505,10 @@ const H = {
   display: () => { S.display = true; render(); },
   theme: id => { S.theme = id; store.set('theme2', id); applyDisplay(); render(); },
   roll: id => { S.roll = id; render(); },
-  lng: id => { S.lng = id === S.lng ? '' : id; render(); },
-  age: id => { S.age = id === S.age ? '' : id; render(); },
   'copy-overdue': () => { const t = overdueText(); if (!t) return toast('Nothing is overdue.'); navigator.clipboard.writeText(t).then(() => toast('Overdue list copied.', 'success'), () => toast('Could not copy.', 'error')); },
   'print-overdue': () => { const t = overdueText(); if (!t) return toast('Nothing is overdue.'); $('#printarea').innerHTML = `<h1 style="font:700 22px sans-serif">Overdue books, ${new Date().toLocaleDateString('en-IN')}</h1><pre style="font:15px/1.6 sans-serif;white-space:pre-wrap">${esc(t)}</pre>`; print(); },
   scan: openScanner,
-  'cancel-scan': async () => { await stopScan(); S.scanning = false; render(); },
+  'cancel-scan': async () => { await (await scanner()).stopScan(); S.scanning = false; render(); },
   search: () => guard(async () => {
     readForm(); const d = S.draft;
     if (d.ISBN) { const r = await lookup({ isbn: d.ISBN }); if (r.items?.[0]) { applyItem(r.items[0], d.ISBN); render(); return; } }
@@ -455,18 +518,27 @@ const H = {
     render();
   }),
   use: i => { readForm(); applyItem(S.results[i]); render(); },
-  save: () => guard(async () => {
+  refresh: () => guard(async () => { await load({ force: true }); render(); toast('Up to date.', 'success'); }),
+  save: () => {
     readForm(); const d = S.draft;
-    if (!d.Title || !d.Author || !d.SubGenre.length) throw new Error('Title, author and at least one sub-genre are required.');
-    if (S.editId) { await api('updateBook', { bookId: S.editId, book: { ...d, SubGenre: d.SubGenre.join('|') } }); S.editId = null; S.draft = newDraft(); S.tab = 'catalogue'; await load(); render(); toast('Changes saved.', 'success'); return; }
-    const again = $('#batch').checked;
+    if (!d.Title || !d.Author || !d.SubGenre.length) return toast('Title, author and at least one sub-genre are required.', 'error');
     const book = { ...d, SubGenre: d.SubGenre.join('|') };
-    let r; try { r = await api('addBook', { book }); } catch (e) { if (!e.offline) throw e; store.set('queue', [...queued(), book]); r = { queued: true }; }
-    S.sticky = { genre: d.Genre, age: d.AgeGroup, cond: d.Condition, lang: d.Language };
-    S.draft = newDraft(); S.results = []; if (!r.queued) await load();
-    toast(r.queued ? 'Saved on this phone. It will sync when you are online.' : `Saved as ${r.bookId}.`, 'success');
+    if (S.editId) {   // edit: the screen updates at once, the save follows in the background
+      const id = S.editId, b = S.books.find(x => x.BookID === id); if (!b) return toast('Book not found.', 'error');
+      const prev = { ...b };
+      Object.assign(b, book); delete b._h; delete b._w;
+      S.editId = null; S.draft = newDraft(); S.tab = 'catalogue'; render(); toast('Changes saved.', 'success');
+      api('updateBook', { bookId: id, book }).catch(e => { Object.assign(b, prev); render(); toast(`Could not save the changes: ${e.message}`, 'error'); });
+      return;
+    }
+    // add: ready for the next book immediately; saves go through one at a time in the background
+    const again = $('#batch').checked, row = { ...book, BookID: '(saving)', Available: 'Yes' };
+    S.books.push(row); S.sticky = { genre: d.Genre, age: d.AgeGroup, cond: d.Condition, lang: d.Language };
+    S.draft = newDraft(); S.results = [];
+    saveBook(book, newId(), row);
+    toast(`Saving "${book.Title}"`, 'success');
     if (again) openScanner(); else render();
-  })
+  }
 };
 
 // ───────── Events ─────────
@@ -475,6 +547,7 @@ document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]'); if (el) H[el.dataset.act]?.(el.dataset.id, el);
 });
 // Hover and keyboard-focus hints: a small box naming what a control does.
+document.addEventListener('error', e => { if (e.target?.hasAttribute?.('data-hide-on-error')) e.target.remove(); }, true);   // hides the optional school photo if it is missing
 const tipEl = document.body.appendChild(Object.assign(document.createElement('div'), { id: 'tip' }));
 tipEl.setAttribute('role', 'tooltip');
 const tipHide = () => { tipEl.style.display = 'none'; };
@@ -489,6 +562,11 @@ const tipShow = e => {
 document.addEventListener('mouseover', tipShow); document.addEventListener('focusin', tipShow);
 ['mousedown', 'scroll', 'keydown'].forEach(ev => addEventListener(ev, tipHide, true));
 document.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {   // keep keyboard focus inside an open dialog
+    const d = document.querySelector('[role=dialog]');
+    const f = d ? [...d.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.getClientRects().length) : [];
+    if (f.length) { const i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && (i === -1 || i === f.length - 1)) { e.preventDefault(); f[0].focus(); } }
+  }
   if (e.key === 'Escape' && (S.login || S.confirm || S.report || S.surprise || S.display || S.open || S.listLogin)) H.close();
   if (e.key === 'Enter' && e.target.id === 'pw') H.login();
   if (e.key === 'Enter' && e.target.id === 'll-pin') H['list-go']();
@@ -515,4 +593,6 @@ document.addEventListener('change', e => {
   if (e.target.id === 'f-genre') { readForm(); S.draft.SubGenre = []; render(); }
 });
 
+if (location.hash === OWNER_HASH) S.login = 'admin';
 render();
+ping(); setInterval(() => { if (!document.hidden) ping(); }, 4 * 60 * 1000);   // keeps the backend warm so nothing waits on a cold start

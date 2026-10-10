@@ -5,13 +5,21 @@
   --font-sans:"Atkinson Hyperlegible","Noto Sans Tamil","Noto Sans Devanagari",system-ui,sans-serif;
 }
 :root{--edge:#1a2744}
-:root[data-theme=dark]{--edge:#9db0e8;--color-ink:#05080f;--color-navy:#dbe4ff;--color-gold:#f0c24b;--color-gold-light:#ffe08a;--color-parchment:#0d111b;--color-surface:#171d2c;
-  --color-slate-800:#f1f3f9;--color-slate-600:#d3d8e6;--color-slate-500:#b4bcd0;--color-stone-100:#242c40;--color-stone-200:#3a4560;--color-stone-300:#55618a;--color-red-800:#ff9d9d;--color-amber-700:#f0c24b}
+/* Night: neutral graphite and black, flat buttons, tighter corners. No blue tint. */
+:root[data-theme=dark]{--edge:#6e6e78;--color-ink:#000;--color-navy:#f2f2f4;--color-gold:#f0c24b;--color-gold-light:#ffe08a;--color-parchment:#121214;--color-surface:#1d1d20;
+  --color-slate-800:#f5f5f6;--color-slate-600:#d6d6db;--color-slate-500:#b3b3bb;--color-stone-100:#2b2b30;--color-stone-200:#3b3b42;--color-stone-300:#5c5c66;--color-red-800:#ff9d9d;--color-amber-700:#f0c24b}
 /* Bento: deep navy tiles, gold accents, no shadows or glow */
 /* Bento uses the original school palette: navy #1a2744 tiles on deep navy #111a30, gold #c9a84c */
 :root[data-theme=bento]{--edge:#c9a84c;--color-ink:#111a30;--color-navy:#e8edf9;--color-parchment:#111a30;--color-surface:#1a2744;--color-gold:#c9a84c;--color-gold-light:#e2c97a;
   --color-slate-800:#f4f6fb;--color-slate-600:#d3daea;--color-slate-500:#b4bfd8;--color-stone-100:#243560;--color-stone-200:#2f4075;--color-stone-300:#52659f;--color-red-800:#ff9d9d;--color-amber-700:#e2c97a}
-[data-theme=bento] .card{border:1px solid var(--color-stone-200);border-radius:20px;box-shadow:none}
+[data-theme=bento] .card{border:1px solid var(--color-stone-200);border-radius:24px;box-shadow:none}
+[data-theme=dark] .card{border-radius:10px}
+[data-theme=dark] .btn,[data-theme=dark] .btn-gold,[data-theme=dark] .btn-red{box-shadow:none;border-width:1px;border-radius:8px}
+[data-theme=dark] .btn:hover,[data-theme=dark] .btn-gold:hover,[data-theme=dark] .btn-red:hover,[data-theme=dark] .btn:active,[data-theme=dark] .btn-gold:active,[data-theme=dark] .btn-red:active{transform:none;box-shadow:none;filter:brightness(1.18)}
+/* Bento only: dashboard tiles in the crest colours */
+[data-theme=bento] .bt-a{background:#1f3a73;color:#fff}[data-theme=bento] .bt-b{background:#3f6b48;color:#fff}[data-theme=bento] .bt-c{background:#7a2b2b;color:#fff}[data-theme=bento] .bt-d{background:#c9a84c;color:#1a2744}[data-theme=bento] .bt-e{background:#243560;color:#fff}
+[data-theme=bento] :is(.bt-a,.bt-b,.bt-c,.bt-d,.bt-e){border-color:transparent}
+[data-theme=bento] :is(.bt-a,.bt-b,.bt-c,.bt-d,.bt-e) :is(p,h1,h2,span){color:inherit}
 html{scroll-behavior:smooth}
 :root[data-theme=dark],:root[data-theme=bento]{color-scheme:dark}
 select option{background-color:var(--color-surface);color:var(--color-slate-800)}

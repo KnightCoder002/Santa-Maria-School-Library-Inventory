@@ -1,12 +1,9 @@
-// Interface text. The site is English only; Tamil and Hindi appear only in book titles and authors.
+// Interface text (English only). Tamil and Hindi appear only in book titles and authors.
 export const T = { en: {
   "library": "The Library",
   "role_student": "Student / Teacher",
   "role_librarian": "Librarian",
   "role_principal": "Principal / Director",
-  "desc_student": "Browse the catalogue and see what is available.",
-  "desc_librarian": "Check books out and in, and add new books.",
-  "desc_principal": "Everything the librarian can do, plus removing books.",
   "staff": "Staff sign in",
   "hero": "What will you read next?",
   "booksWord": "books",
@@ -47,6 +44,5 @@ export const T = { en: {
   "thanks": "Thank you. We got your report.",
   "install": "Add to home screen",
   "iosHint": "On iPhone: tap Share, then Add to Home Screen.",
-  "role_admin": "Owner",
-  "desc_admin": "Reads problem reports."
+  "role_admin": "Owner"
 } };
