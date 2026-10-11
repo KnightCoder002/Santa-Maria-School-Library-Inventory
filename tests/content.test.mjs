@@ -32,3 +32,9 @@ test('the page has no inline scripts or handlers (needed by the security policy)
     assert.equal(/\son(click|error|load|change|input)=/.test(s), false, f);
   }
 });
+
+test('titleOf never calls itself (that once froze the Records and Stats tabs)', () => {
+  const src = fs.readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
+  const body = src.match(/const titleOf = c => \{([\s\S]*?)\n\};/)[1];
+  assert.equal(body.includes('titleOf('), false);
+});

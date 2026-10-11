@@ -20,6 +20,15 @@ test('wrong guesses slow staff logins down but never lock the real person out; t
   assert.throws(() => b.login({ role: 'admin', password: 'pw-admin' }), /Too many attempts/);
 });
 
+test('a login with a missing or damaged hash says exactly what is wrong; stray spaces are ignored', () => {
+  const b = createBackend(); delete b.props.HASH_admin;
+  assert.throws(() => b.login({ role: 'admin', password: 'x' }), /HASH_admin is missing/);
+  b.props.HASH_admin = 'abc';
+  assert.throws(() => b.login({ role: 'admin', password: 'x' }), /looks wrong/);
+  const ok = createBackend(); ok.props.HASH_librarian = '  ' + ok.props.HASH_librarian.toUpperCase() + '\n';
+  assert.ok(ok.login({ role: 'librarian', password: 'pw-librarian' }).token);
+});
+
 test('the server refuses to run without its Script properties', () => {
   const b = createBackend({ omit: ['SALT'] });
   assert.throws(() => b.login({ role: 'student', password: 'pw-student' }), /not set up/);

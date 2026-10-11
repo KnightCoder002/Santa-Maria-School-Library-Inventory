@@ -29,7 +29,7 @@ In Apps Script: **Project Settings** (gear icon) > **Script properties** > Add s
 | `HASH_principal` | hash for the principal password |
 | `HASH_admin` | hash for the Owner password (opens only at `https://YOUR-SITE.vercel.app/#owner`) |
 
-**Making a hash:** save `SALT` first. In the editor, change the role and password inside `makeHash()` at the bottom of `Code.gs` (for example `pwHash('librarian', 'my long passphrase')`), choose `makeHash` in the toolbar, press Run, approve the prompts, open View > Execution log, and copy the long text into the matching `HASH_` property. Repeat for all four logins. Use 12+ characters for staff and Owner passwords. Do not leave real passwords in the function afterwards.
+**Making a hash:** save `SALT` first. In the editor, change the role and password inside `makeHash()` at the bottom of `Code.gs` (for example `pwHash('librarian', 'my long passphrase')`), choose `makeHash` in the toolbar, press Run, approve the prompts, open View > Execution log, and copy the long text into the matching `HASH_` property. Repeat for all four logins. Use 12+ characters for staff and Owner passwords. Do not leave real passwords in the function afterwards. To check your work at any time, run `checkSetup()` the same way: it says whether each property exists and whether a password matches its hash.
 
 **Time zone:** Project Settings > Time zone > Asia/Kolkata. Otherwise dates can shift by a day.
 
@@ -88,6 +88,8 @@ console.cloud.google.com > create a project > enable **Books API** > Credentials
 
 ## Troubleshooting
 - **"The server is not set up yet":** `SHEET_ID` or `SALT` is missing in Script properties.
+- **"This login is not set up yet: HASH_admin is missing":** the Script property is missing or its name is misspelled (it must be exactly `HASH_student`, `HASH_librarian`, `HASH_principal` or `HASH_admin`).
+- **"The saved password hash ... looks wrong":** the value has missing or extra characters. Copy it again from the Execution log.
 - **Every password says "Incorrect":** the `HASH_` value was made with a different `SALT` or role. Make it again.
 - **"Backend unreachable" or invalid response:** `GAS_URL` is wrong, or the deployment's access is not "Anyone".
 - **A new feature says "Not allowed":** `Code.gs` was not republished as a new version.

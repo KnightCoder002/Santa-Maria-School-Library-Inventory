@@ -35,7 +35,9 @@ function login(p) {
   const role = String(p.role || ''), pw = String(p.password || '');
   if (!SALT || !SHEET_ID) throw new Error('The server is not set up yet. See DEPLOY.md, step 2.');
   if (!role || !pw) throw new Error('Role and password are required.');
-  const c = CacheService.getScriptCache(), k = 'fail_' + role, n = +(c.get(k) || 0), expected = P.getProperty('HASH_' + role);
+  const c = CacheService.getScriptCache(), k = 'fail_' + role, n = +(c.get(k) || 0), expected = String(P.getProperty('HASH_' + role) || '').trim().toLowerCase();
+  if (['student', 'librarian', 'principal', 'admin'].indexOf(role) >= 0 && !expected) throw new Error('This login is not set up yet: the Script property HASH_' + role + ' is missing. See DEPLOY.md, step 2.');
+  if (expected && !/^[a-f0-9]{64}$/.test(expected)) throw new Error('The saved password hash for ' + role + ' looks wrong (it must be exactly 64 letters and digits). Make it again with makeHash().');
   if (role === 'admin' && n >= 5) throw new Error('Too many attempts. Try again later.');
   if (!expected || pwHash(role, pw) !== expected) {
     c.put(k, String(n + 1), role === 'admin' ? 1800 : 600);
@@ -303,3 +305,13 @@ function repSheet() {
 // Run once per login from the Apps Script editor: change the role and the password, press Run,
 // then copy the long text from View > Execution log into the Script property HASH_<role>.
 function makeHash() { Logger.log(pwHash('student', 'CHANGE-THIS-PASSWORD')); }
+
+// Run from the editor to find setup mistakes. Change the role and password, press Run, then read View > Execution log.
+function checkSetup() {
+  const role = 'admin', pw = 'CHANGE-THIS-PASSWORD';
+  ['SHEET_ID', 'SALT', 'HASH_student', 'HASH_librarian', 'HASH_principal', 'HASH_admin'].forEach(k => {
+    const v = P.getProperty(k);
+    Logger.log(k + ': ' + (v == null ? 'MISSING' : k.indexOf('HASH_') === 0 ? (/^[a-f0-9]{64}$/.test(String(v).trim().toLowerCase()) ? 'ok' : 'WRONG FORMAT (' + v.length + ' characters, it must be 64 letters and digits)') : 'ok'));
+  });
+  Logger.log('Password for ' + role + ': ' + (pwHash(role, pw) === String(P.getProperty('HASH_' + role) || '').trim().toLowerCase() ? 'MATCHES' : 'DOES NOT MATCH (was the hash made for this role, this password and this SALT?)'));
+}

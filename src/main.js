@@ -82,12 +82,16 @@ function toast(msg, type = 'info') {
   clearTimeout(toast.t); toast.t = setTimeout(() => { t.className = ''; }, 3500);
 }
 
-const loadReports = async () => { S.reports = await api('getReports'); };
+const loadReports = async () => { S.reports = (await api('getReports')).map(r => fill(r, REPORT_KEYS)); };
+const BOOK_KEYS = ['BookID', 'Title', 'Author', 'Genre', 'SubGenre', 'Available', 'AgeGroup', 'Condition', 'Language', 'ContainedWorks', 'ISBN', 'DueBack', 'Borrows'];
+const CHECKOUT_KEYS = ['CheckoutID', 'RollNumber', 'BookID', 'Title', 'CheckoutDate', 'DueDate', 'Returned'];
+const REPORT_KEYS = ['ReportID', 'Date', 'Role', 'Type', 'Message', 'Contact', 'Status'];
+const fill = (o, keys) => { const r = { ...o }; keys.forEach(k => { r[k] = r[k] == null ? '' : String(r[k]); }); return r; };
 function applyAll(d) {
   // Same rule as your old app: anything that is not exactly 'No' counts as available.
-  S.books = (d.inventory || []).filter(b => b.BookID && b.BookID !== 'REMOVED').map(b => ({ ...b, Available: b.Available === 'No' ? 'No' : 'Yes' }));
-  S.checkouts = d.checkouts || [];
-  S.genres = d.genres || [];
+  S.books = (d.inventory || []).filter(b => b.BookID && b.BookID !== 'REMOVED').map(b => ({ ...fill(b, BOOK_KEYS), Available: b.Available === 'No' ? 'No' : 'Yes' }));
+  S.checkouts = (d.checkouts || []).map(c => fill(c, CHECKOUT_KEYS));
+  S.genres = (d.genres || []).map(g => fill(g, ['Genre', 'SubGenre']));
   S.loadedAt = Date.now();
 }
 // Loads the library once, then reuses it for 45 seconds. Saves update the screen directly, so no reload is needed after them.
@@ -175,7 +179,7 @@ const filterBar = () => {
 let tmap = null, tmapFor = null, tmapN = -1;
 const titleOf = c => {   // a checkout shows the book's current title, so edits to a title reach old records too
   if (tmapFor !== S.books || tmapN !== S.books.length) { tmap = new Map(S.books.map(b => [b.BookID, b])); tmapFor = S.books; tmapN = S.books.length; }
-  return tmap.get(c.BookID)?.Title || titleOf(c);
+  return tmap.get(c.BookID)?.Title || c.Title || '';
 };
 const isoDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const spark = v => { const mx = Math.max(1, ...v), pts = v.map((n, i) => `${(i / (v.length - 1)) * 120},${36 - (n / mx) * 32}`).join(' '); return `<svg viewBox="0 0 120 40" class="h-12 w-32 text-gold" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><polyline points="${pts}"/></svg>`; };
@@ -340,7 +344,7 @@ function overlays() {
   if (S.scanning) return `<div role="dialog" aria-modal="true" aria-label="Barcode scanner" class="fixed inset-0 z-50 flex flex-col bg-black"><p class="p-4 text-center text-sm text-white">Point the camera at the barcode on the back of the book</p><div id="reader" class="flex-1"></div><button class="btn m-4" data-act="cancel-scan">Cancel</button></div>`;
   const box = inner => `<div class="fixed inset-0 z-50 grid place-items-center bg-ink/70 p-4"><div role="dialog" aria-modal="true" class="w-full max-w-sm rounded-2xl bg-surface p-6">${inner}</div></div>`;
   if (S.login) return box(`<h2 class="font-display text-2xl text-navy">${ROLES[S.login].name}</h2><label class="label mt-4" for="pw">${tr('password')}</label><input id="pw" type="password" class="input" autocomplete="current-password">
-    <p id="lerr" class="mt-2 hidden text-sm text-red-800"></p><button class="btn-gold mt-4 w-full" data-act="login">${tr('signin')}</button><button class="btn mt-2 w-full" data-act="close">${tr('back2')}</button>`);
+    <p id="lerr" class="mt-2 hidden text-sm text-red-800"></p><p id="lnote" class="mt-2 text-sm text-slate-500" aria-live="polite"></p><button class="btn-gold mt-4 w-full" data-act="login">${tr('signin')}</button><button class="btn mt-2 w-full" data-act="close">${tr('back2')}</button>`);
   if (S.confirm) { const b = S.books.find(x => x.BookID === S.confirm); return box(`<h2 class="font-display text-xl text-navy">Remove this book?</h2><p class="my-3 text-sm text-slate-600">${esc(b?.Title)} (${esc(S.confirm)}) will be deleted from the catalogue.</p>
     <div class="flex gap-2"><button class="btn flex-1" data-act="close">Keep</button><button class="btn-red flex-1" data-act="remove">Remove</button></div>`); }
   if (S.display) return box(`<h2 class="font-display text-2xl text-navy">Display</h2><p class="label mt-4">Theme</p><div class="grid gap-2">${[['light', 'Paper', 'Warm and calm'], ['dark', 'Night', 'High contrast, easy on the eyes'], ['bento', 'Bento', 'Navy tiles with gold accents']].map(([k, n, d]) => `<button data-act="theme" data-id="${k}" aria-pressed="${S.theme === k}" class="btn !justify-between ${S.theme === k ? '!bg-gold !text-ink' : ''}"><span>${n}</span><span class="text-xs font-normal">${d}</span></button>`).join('')}</div>
@@ -395,6 +399,11 @@ const H = {
   role: id => { S.login = id; render(); },
   close: () => { if (S.login === 'admin') clearHash(); S.listLogin = null; S.open = null; S.display = false; S.login = null; S.confirm = null; S.report = null; S.surprise = null; render(); },
   async login() {
+    if (S.signingIn) return;
+    S.signingIn = true;
+    const btn = $('[data-act="login"]'), label = btn.innerHTML;
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Signing in...';
+    const slow = setTimeout(() => { const n = $('#lnote'); if (n) n.textContent = 'Waking up the library. This can take a few seconds the first time.'; }, 3000);
     try {
       const role = S.login, d = await api('login', { role, password: $('#pw').value, withData: role !== 'admin' });   // sign-in and data in one request
       setToken(d.token); if (role === 'admin') clearHash(); S.role = role; S.login = null; S.tab = role === 'student' ? 'catalogue' : role === 'admin' ? 'reports' : 'dashboard'; S.draft = newDraft();
@@ -402,7 +411,8 @@ const H = {
       S.loading = !d.data; render();
       if (!d.data) { try { await (role === 'admin' ? loadReports() : load({ force: true })); } catch (e) { toast(e.message, 'error'); } S.loading = false; render(); }
       syncQueue();
-    } catch (e) { const el = $('#lerr'); el.textContent = e.message; el.classList.remove('hidden'); }
+    } catch (e) { console.error(e); const el = $('#lerr'); if (el) { el.textContent = e.message; el.classList.remove('hidden'); } }
+    finally { clearTimeout(slow); S.signingIn = false; const b = $('[data-act="login"]'); if (b) { b.disabled = false; b.innerHTML = label; } const n = $('#lnote'); if (n) n.textContent = ''; }
   },
   logout: () => { setToken(null); Object.assign(S, { role: null, loadedAt: 0, me: null, list: [], listLogin: null, editId: null, books: [], checkouts: [], genres: [], pick: null, roll: '', q: '', cq: '', rq: '' }); render(); },
   tab: id => { readForm(); if (S.tab === 'add' && id !== 'add' && S.editId) { S.editId = null; S.draft = newDraft(); } S.tab = id; render(); if (id !== 'add') guard(async () => { const was = S.loadedAt; await (S.role === 'admin' ? loadReports() : load()); if (S.tab === id && (S.role === 'admin' || S.loadedAt !== was)) render(); }); },
@@ -472,6 +482,8 @@ const H = {
   },
   'list-open': () => { S.listLogin = { pending: null }; render(); },
   'list-go': async () => {
+    if (S.listBusy) return; S.listBusy = true;
+    const go = $('[data-act="list-go"]'), goLabel = go?.innerHTML; if (go) { go.disabled = true; go.innerHTML = '<span class="spinner"></span> Opening...'; }
     const roll = $('#ll-roll').value.trim(), pin = $('#ll-pin').value.trim(), err = $('#ll-err'), pending = S.listLogin?.pending;
     try {
       const r = await api('listOpen', { roll, pin }); let books = r.books;
@@ -479,6 +491,7 @@ const H = {
       S.me = { roll, pin }; S.list = books; S.listLogin = null; render();
       toast(r.isNew ? 'List created. Remember your PIN.' : 'Welcome back.', 'success');
     } catch (e) { err.textContent = e.message; err.classList.remove('hidden'); }
+    finally { S.listBusy = false; if (go?.isConnected) { go.disabled = false; go.innerHTML = goLabel; } }
   },
   'list-lock': () => { S.me = null; S.list = []; render(); },
   'reset-pin': () => guard(async () => {

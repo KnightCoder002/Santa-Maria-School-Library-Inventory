@@ -45,3 +45,6 @@ select option{background-color:var(--color-surface);color:var(--color-slate-800)
 /* Tile colours taken from the crest: banner blue, laurel green, flame maroon, shield gold */
 .tile-a{background:#1f3a73;color:#fff}.tile-b{background:#3f6b48;color:#fff}.tile-c{background:#7a2b2b;color:#fff}.tile-d{background:#c9a84c;color:#1a2744}.tile-e{background:#243560;color:#fff}
 .tile-a h2,.tile-b h2,.tile-c h2,.tile-e h2{color:#e2c97a}
+
+.spinner{display:inline-block;width:1rem;height:1rem;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
