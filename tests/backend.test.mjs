@@ -8,7 +8,7 @@ test('sign-in returns the library in the same request, and students never get ch
   const b = createBackend();
   const r = b.login({ role: 'student', password: 'pw-student', withData: true });
   assert.ok(r.token); assert.ok(Array.isArray(r.data.inventory)); assert.equal('checkouts' in r.data, false);
-  assert.equal('data' in b.login({ role: 'admin', password: 'pw-admin', withData: true }), false);
+  assert.ok(b.login({ role: 'admin', password: 'pw-admin', withData: true }).data.checkouts);
 });
 
 test('wrong guesses slow staff logins down but never lock the real person out; the Owner login locks', () => {
@@ -29,9 +29,33 @@ test('a login with a missing or damaged hash says exactly what is wrong; stray s
   assert.ok(ok.login({ role: 'librarian', password: 'pw-librarian' }).token);
 });
 
+test('makeAllHashes prints four hashes that really work for sign-in', () => {
+  const b = createBackend(); b.makeAllHashes();
+  const lines = b.stats.logs.filter(l => l.startsWith('HASH_'));
+  assert.equal(lines.length, 4);
+  for (const l of lines) { const [name, hash] = l.split(' = '); b.props[name] = hash; }
+  for (const r of ['student', 'librarian', 'principal', 'admin']) assert.ok(b.login({ role: r, password: 'CHANGE-ME' }).token, r);
+});
+
+test('checkSetup names the role whose hash a password really matches', () => {
+  const b = createBackend();
+  b.props.HASH_student = b.pwHash('student', 'CHANGE-THIS-PASSWORD');   // the likely mistake: the Owner hash was made under another role
+  b.props.HASH_admin = b.pwHash('student', 'CHANGE-THIS-PASSWORD');
+  b.checkSetup();
+  assert.ok(b.stats.logs.some(l => l.includes('matches the hash saved for student, admin') || l.includes('matches the hash saved for student')));
+  const w = createBackend(); w.props.HASH_admin = 'a'.repeat(64); w.checkSetup();
+  assert.ok(w.stats.logs.some(l => l.includes('DOES NOT MATCH any saved hash')));
+});
+
 test('the server refuses to run without its Script properties', () => {
   const b = createBackend({ omit: ['SALT'] });
   assert.throws(() => b.login({ role: 'student', password: 'pw-student' }), /not set up/);
+});
+
+test('only the librarian can add books (the principal cannot)', () => {
+  const b = createBackend();
+  assert.equal(b.call(b.signIn('principal'), 'addBook', { book, rid: 'p1' }).error, 'Not allowed.');
+  assert.equal(b.call(b.signIn('librarian'), 'addBook', { book, rid: 'p2' }).success, true);
 });
 
 test('adding a book is safe to retry: same request id, one row; ids never reuse a removed book', () => {
@@ -122,4 +146,101 @@ test('without a valid sign-in nothing works, and unknown actions are refused', (
   assert.match(b.call('nope', 'getAll').error, /Session expired/);
   assert.equal(b.call(b.signIn('student'), 'doesNotExist').error, 'Not allowed.');
   assert.equal(b.call(undefined, 'ping').success, true);
+});
+
+// ───────── Owner tools, "keep me signed in", settings, log, backups ─────────
+test('keep me signed in: students only, signed, expiring, and revocable', () => {
+  const b = createBackend();
+  const s = b.login({ role: 'student', password: 'pw-student', remember: true });
+  assert.ok(s.token.startsWith('R.') && s.remember);
+  assert.equal(b.call(s.token, 'getAll').success, true);
+  assert.ok(!b.login({ role: 'librarian', password: 'pw-librarian', remember: true }).token.startsWith('R.'));   // never for staff
+  const last = s.token.slice(-1), tampered = s.token.slice(0, -1) + (last === 'a' ? 'b' : 'a');   // always really different
+  assert.match(b.call(tampered, 'getAll').error, /Session expired/);                           // tampered
+  assert.equal(b.call(s.token, 'addBook', { book }).error, 'Not allowed.');                                         // it is only a student
+  const r = b.resume({ token: s.token });
+  assert.ok(r.token.startsWith('R.') && r.data.inventory);
+  b.clock.t += 31 * 864e5;
+  assert.match(b.call(s.token, 'getAll').error, /Session expired/);                                                // 30 days later
+});
+
+test('sign everyone out: old sessions and remembered devices stop; the Owner keeps a fresh sign-in', () => {
+  const b = createBackend(), own = b.signIn('admin'), lib = b.signIn('librarian'), rem = b.login({ role: 'student', password: 'pw-student', remember: true }).token;
+  const r = b.call(own, 'signOutAll').data;
+  assert.match(b.call(lib, 'getAll').error, /Session expired/);
+  assert.match(b.call(rem, 'getAll').error, /Session expired/);
+  assert.match(b.call(own, 'getReports').error, /Session expired/);
+  assert.equal(b.call(r.token, 'getReports').success, true);
+});
+
+test('Owner can change passwords: needs the current one, a long enough new one, and the old one stops working', () => {
+  const b = createBackend(), own = b.signIn('admin');
+  assert.match(b.call(own, 'setPassword', { role: 'librarian', password: 'a-long-new-passphrase', current: 'wrong' }).error, /current Owner password/);
+  assert.match(b.call(own, 'setPassword', { role: 'librarian', password: 'short', current: 'pw-admin' }).error, /at least 12/);
+  assert.equal(b.call(own, 'setPassword', { role: 'student', password: 'tiny', current: 'pw-admin' }).error, 'Use at least 6 characters for the student password.');
+  assert.equal(b.call(own, 'setPassword', { role: 'librarian', password: 'a-long-new-passphrase', current: 'pw-admin' }).success, true);
+  assert.throws(() => b.login({ role: 'librarian', password: 'pw-librarian' }), /Incorrect/);
+  assert.ok(b.login({ role: 'librarian', password: 'a-long-new-passphrase' }).token);
+  assert.ok(b.login({ role: 'principal', password: 'pw-principal' }).token);   // others untouched
+  assert.equal(b.call(b.signIn('principal'), 'setPassword', { role: 'student', password: 'whatever1', current: 'x' }).error, 'Not allowed.');
+});
+
+test('settings, notice banner and custom quotes reach students; only the Owner can change them', () => {
+  const b = createBackend(), own = b.signIn('admin'), stu = b.signIn('student');
+  assert.match(b.call(own, 'saveSettings', { settings: { loan_days: '500' } }).error, /not allowed/);
+  assert.match(b.call(own, 'saveSettings', { settings: { evil: 'x' } }).error, /Unknown setting/);
+  assert.equal(b.call(own, 'saveSettings', { settings: { loan_days: '10', loan_limit: '2', banner_on: 'yes', banner_text: 'Closed on Friday' } }).success, true);
+  assert.equal(b.call(own, 'saveQuotes', { quotes: [['Read often.', 'Me'], ['', 'blank'], ['=SUM(1)', 'x']] }).data.saved, 2);
+  const s = b.call(stu, 'getAll').data;
+  assert.equal(s.settings.banner_text, 'Closed on Friday'); assert.equal(s.settings.loan_limit, '2');
+  assert.equal(s.quotes[0][0], 'Read often.'); assert.equal(s.quotes[1][0][0], "'");
+  assert.equal(b.call(b.signIn('principal'), 'saveSettings', { settings: { banner_on: 'no' } }).error, 'Not allowed.');
+  assert.equal(b.call(stu, 'saveQuotes', { quotes: [] }).error, 'Not allowed.');
+});
+
+test('reports: notes are saved; email goes out only when the address has been replaced', () => {
+  const off = createBackend(), stu = off.signIn('student'), own = off.signIn('admin');
+  off.call(stu, 'report', { type: 'A book is missing', message: 'Wings of Fire' });
+  assert.equal(off.stats.mails.length, 0);
+  const id = off.call(own, 'getReports').data[0].ReportID;
+  off.call(own, 'setReport', { reportId: id, notes: 'Will buy in November' });
+  off.call(own, 'setReport', { reportId: id, status: 'Resolved' });
+  const row = off.call(own, 'getReports').data[0];
+  assert.equal(row.Notes, 'Will buy in November'); assert.equal(row.Status, 'Resolved');
+  const on = createBackend({ ownerEmail: 'owner@school.example' });
+  on.call(on.signIn('student'), 'report', { type: 'Something else', message: 'Hello', contact: 'roll 5' });
+  assert.equal(on.stats.mails.length, 1); assert.equal(on.stats.mails[0].to, 'owner@school.example');
+  assert.match(on.stats.mails[0].subject, /Something else/);
+});
+
+test('report emails can also be switched on with a Script property', () => {
+  const b = createBackend(); b.props.OWNER_EMAIL = 'me@school.example';
+  b.call(b.signIn('student'), 'report', { type: 'Something else', message: 'Hi' });
+  assert.equal(b.stats.mails.length, 1); assert.equal(b.stats.mails[0].to, 'me@school.example');
+});
+
+test('activity log: staff actions are recorded, only the Owner reads it, wrong Owner passwords are noted', () => {
+  const b = createBackend(), lib = b.signIn('librarian'), own = b.signIn('admin');
+  const id = b.call(lib, 'addBook', { book, rid: 'l1' }).data.bookId;
+  b.call(lib, 'checkout', { bookId: id, roll: '1371', days: 7, rid: 'l2' });
+  assert.throws(() => b.login({ role: 'admin', password: 'nope' }));
+  const log = b.call(own, 'getLog').data, actions = log.map(l => l.Action);
+  for (const a of ['Added book', 'Checked out', 'Wrong Owner password', 'Signed in']) assert.ok(actions.includes(a), a);
+  assert.ok(log.some(l => l.Who === 'librarian' && l.Detail.includes('roll 1371')));
+  assert.equal(b.call(lib, 'getLog').error, 'Not allowed.');
+  const before = b.call(own, 'getLog').data.length; b.signIn('student'); assert.equal(b.call(own, 'getLog').data.length, before);   // student sign-ins are not logged
+});
+
+test('backups: a copy is made, only the newest 12 are kept, weekly backup can be switched on and off', () => {
+  const b = createBackend(), own = b.signIn('admin');
+  assert.match(b.call(own, 'backupNow').data.name, /^Library backup /);
+  for (let i = 0; i < 14; i++) b.call(own, 'backupNow');
+  assert.equal(b.call(own, 'getBackups').data.backups.length, 10);
+  assert.equal(b.drive.files.filter(f => !f.trashed).length, 12);
+  assert.equal(b.call(own, 'getBackups').data.weekly, false);
+  assert.equal(b.call(own, 'setWeeklyBackup', { on: true }).data.weekly, true); assert.equal(b.triggers.length, 1);
+  assert.equal(b.call(own, 'getBackups').data.weekly, true);
+  b.call(own, 'setWeeklyBackup', { on: false }); assert.equal(b.triggers.length, 0);
+  assert.ok(b.call(own, 'getAll').data.meta.lastBackup);
+  assert.equal(b.call(b.signIn('principal'), 'backupNow').error, 'Not allowed.');
 });
