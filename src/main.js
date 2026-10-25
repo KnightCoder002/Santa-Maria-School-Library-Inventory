@@ -684,6 +684,7 @@ Object.assign(views, {
       <label class="label mt-3" for="pw-current">Your current Owner password</label><input id="pw-current" type="password" autocomplete="current-password" class="input"><label class="mt-3 flex items-center gap-2 text-sm"><input id="pw-all" type="checkbox" checked class="h-5 w-5" style="accent-color:#c9a84c"> Also sign everyone out</label><button class="btn-gold mt-3" data-act="save-pw">Change password</button>`)}
     <div class="grid content-start gap-3">
     ${section('Sign everyone out', 'Ends every session, including students who chose "keep me signed in". You stay signed in. Use it if a password may have leaked.', '<button class="btn-red" data-act="signout-all">Sign everyone out</button>')}
+    ${section('Report emails', 'Every problem report is also emailed to the address saved in the Script property OWNER_EMAIL.', `<p class="mb-3 text-sm">${S.meta.email ? `Reports are emailed to <b>${esc(S.meta.email)}</b>.` : 'No address is set yet. Add a Script property named <b>OWNER_EMAIL</b> in Apps Script (DEPLOY.md, step 3).'}</p><button class="btn-gold" data-act="test-email" data-tip="Send yourself a test message to check that report emails work">Send a test email</button>`)}
     ${section('Backups', 'A dated copy of the whole Sheet in your Google Drive folder "Library backups". The newest 12 are kept.', `<div class="flex flex-wrap items-center gap-3"><button class="btn-gold" data-act="backup-now">Back up now</button><label class="flex items-center gap-2 text-sm"><input id="weekly" type="checkbox" data-act="weekly" class="h-5 w-5" style="accent-color:#c9a84c" ${b?.weekly ? 'checked' : ''}> Back up automatically every Sunday</label></div>
       <h3 class="label mt-4">Recent backups</h3>${b ? (b.backups.length ? `<ul class="text-sm">${b.backups.map(x => `<li class="border-b border-stone-100 py-1.5 last:border-0"><a class="underline" href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.name.replace('Library backup ', ''))}</a></li>`).join('')}</ul>` : '<p class="text-sm text-slate-500">No backups yet.</p>') : '<p class="text-sm text-slate-500"><span class="spinner"></span> Loading...</p>'}`)}</div></div>`;
   }
@@ -739,6 +740,7 @@ Object.assign(H, {
   'backup-now': (_, el) => withBusy(el, 'Backing up...', () => guard(async () => {
     const r = await api('backupNow'); S.meta.lastBackup = r.name.replace('Library backup ', ''); if (S.tab === 'safety') await loadBackups(); render(); toast('Backup saved in Google Drive.', 'success');
   })),
+  'test-email': (_, el) => withBusy(el, 'Sending...', () => guard(async () => { const r = await api('sendTestEmail'); toast(`Test email sent to ${r.to}. Check your inbox (and spam).`, 'success'); })),
   weekly: () => guard(async () => {
     const on = $('#weekly').checked, r = await api('setWeeklyBackup', { on });
     S.backups = { ...(S.backups || { backups: [] }), weekly: r.weekly }; toast(on ? 'Weekly backup is on (Sundays, about 2 am).' : 'Weekly backup is off.', 'success');

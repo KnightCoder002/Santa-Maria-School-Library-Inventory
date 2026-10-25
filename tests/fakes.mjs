@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import crypto from 'node:crypto';
 
-export function createBackend({ roles = ['student', 'librarian', 'principal', 'admin'], omit = [], ownerEmail = null } = {}) {
+export function createBackend({ roles = ['student', 'librarian', 'principal', 'admin'], omit = [], ownerEmail = null, denyDrive = false, failMail = false } = {}) {
   const sheets = {}, cache = {}, props = { SHEET_ID: 'test-sheet', SALT: 'test-salt' };
   omit.forEach(k => delete props[k]);
   const stats = { reads: 0, slept: 0, logs: [], mails: [] }, clock = { t: Date.now() }, triggers = [], drive = { folder: null, files: [] };
@@ -30,15 +30,16 @@ export function createBackend({ roles = ['student', 'librarian', 'principal', 'a
   mk('Checkouts', ['CheckoutID', 'RollNumber', 'BookID', 'Title', 'CheckoutDate', 'DueDate', 'Returned']);
   mk('Genres', ['Genre', 'SubGenre']);
   const mkFile = name => ({ name, trashed: false, created: clock.t + drive.files.length, getName() { return name; }, getUrl: () => 'https://drive/' + name, getDateCreated() { return new Date(this.created); }, setTrashed(v) { this.trashed = v; } });
+  const wrapDrive = api => (denyDrive ? new Proxy(api, { get: (t, k) => () => { throw new Error('You do not have permission to call DriveApp.' + String(k) + '. Required permissions: (https://www.googleapis.com/auth/drive.readonly || https://www.googleapis.com/auth/drive)'); } }) : api);
   const ctx = {
     Date: FakeDate,
     Utilities: { DigestAlgorithm: { SHA_256: 1 }, Charset: { UTF_8: 1 }, getUuid: () => crypto.randomUUID(), formatDate: () => '2026-10-07', sleep: ms => { stats.slept += ms; },
       computeHmacSha256Signature: (m, k) => [...crypto.createHmac('sha256', k).update(m).digest()].map(b => (b > 127 ? b - 256 : b)),
       computeDigest: (a, t) => [...crypto.createHash('sha256').update(t).digest()].map(b => (b > 127 ? b - 256 : b)) },
-    MailApp: { sendEmail: (to, subject, body) => { stats.mails.push({ to, subject, body }); }, getRemainingDailyQuota: () => 100 },
-    DriveApp: { getRootFolder() {}, getFoldersByName: () => ({ hasNext: () => !!drive.folder, next: () => drive.folder }),
+    MailApp: { sendEmail: (to, subject, body) => { if (failMail) throw new Error('Service invoked too many times for one day: email.'); stats.mails.push({ to, subject, body }); }, getRemainingDailyQuota: () => 100 },
+    DriveApp: wrapDrive({ getRootFolder() {}, getFoldersByName: () => ({ hasNext: () => !!drive.folder, next: () => drive.folder }),
       createFolder: () => (drive.folder = { getFiles: () => { const l = drive.files.filter(f => !f.trashed); let i = 0; return { hasNext: () => i < l.length, next: () => l[i++] }; } }),
-      getFileById: () => ({ makeCopy: name => { const f = mkFile(name); drive.files.push(f); clock.t += 1000; return f; } }) },
+      getFileById: () => ({ getName: () => 'Library', makeCopy: name => { const f = mkFile(name); drive.files.push(f); clock.t += 1000; return f; } }) }),
     ScriptApp: { WeekDay: { SUNDAY: 'SUNDAY' }, getProjectTriggers: () => triggers, deleteTrigger: t => { triggers.splice(triggers.indexOf(t), 1); },
       newTrigger: fn => { const t = { getHandlerFunction: () => fn }; const b = { timeBased: () => b, onWeekDay: () => b, atHour: () => b, create: () => { triggers.push(t); return t; } }; return b; } },
     Logger: { log: m => stats.logs.push(String(m)) },
@@ -51,10 +52,10 @@ export function createBackend({ roles = ['student', 'librarian', 'principal', 'a
     SpreadsheetApp: { openById: () => ({ getSheetByName: n => sheets[n] || null, insertSheet: n => mk(n) }) }
   };
   vm.createContext(ctx);
-  vm.runInContext((ownerEmail ? fs.readFileSync(new URL('../backend/Code.gs', import.meta.url), 'utf8').replace("'PUT-YOUR-EMAIL-HERE@example.com'", JSON.stringify(ownerEmail)) : fs.readFileSync(new URL('../backend/Code.gs', import.meta.url), 'utf8')) + ';this.api={H,login,doPost,pwHash,makeAllHashes,checkSetup,resume};', ctx);
+  vm.runInContext((ownerEmail ? fs.readFileSync(new URL('../backend/Code.gs', import.meta.url), 'utf8').replace("'PUT-YOUR-EMAIL-HERE@example.com'", JSON.stringify(ownerEmail)) : fs.readFileSync(new URL('../backend/Code.gs', import.meta.url), 'utf8')) + ';this.api={H,login,doPost,pwHash,makeAllHashes,checkSetup,resume,authorizeAll};', ctx);
   const { H, login, doPost, pwHash, makeAllHashes, checkSetup } = ctx.api;
   roles.forEach(r => { props['HASH_' + r] = pwHash(r, 'pw-' + r); });
   const signIn = role => login({ role, password: 'pw-' + role }).token;
   const call = (token, action, data = {}) => JSON.parse(doPost({ postData: { contents: JSON.stringify({ action, token, ...data }) } }).t);
-  return { H, login, call, signIn, sheets, cache, props, stats, makeAllHashes, checkSetup, pwHash, clock, triggers, drive, resume: ctx.api.resume };
+  return { H, login, call, signIn, sheets, cache, props, stats, makeAllHashes, checkSetup, pwHash, clock, triggers, drive, resume: ctx.api.resume, authorizeAll: ctx.api.authorizeAll };
 }

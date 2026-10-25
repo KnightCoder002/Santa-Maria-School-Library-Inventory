@@ -219,6 +219,40 @@ test('report emails can also be switched on with a Script property', () => {
   assert.equal(b.stats.mails.length, 1); assert.equal(b.stats.mails[0].to, 'me@school.example');
 });
 
+test('every report sends its own email to the address in the OWNER_EMAIL property', () => {
+  const b = createBackend(); b.props.OWNER_EMAIL = '  me@school.example ';
+  const stu = b.signIn('student');
+  b.call(stu, 'report', { type: 'A book is missing', message: 'Wings of Fire', contact: 'roll 5' });
+  b.call(stu, 'report', { type: 'Problem with this site', message: 'Search is slow' });
+  assert.equal(b.stats.mails.length, 2);
+  assert.ok(b.stats.mails.every(m => m.to === 'me@school.example'));
+  assert.match(b.stats.mails[0].subject, /A book is missing/);
+  assert.ok(b.stats.mails[0].body.includes('Wings of Fire') && b.stats.mails[0].body.includes('roll 5') && b.stats.mails[0].body.includes('student'));
+  b.props.SITE_URL = 'https://lib.example.com/'; b.call(stu, 'report', { type: 'Something else', message: 'Hi' });
+  assert.ok(b.stats.mails[2].body.includes('https://lib.example.com/#owner'));
+});
+
+test('a failed or impossible email never blocks the report, and the failure shows in the activity log', () => {
+  const bad = createBackend({ failMail: true }); bad.props.OWNER_EMAIL = 'me@school.example';
+  assert.equal(bad.call(bad.signIn('student'), 'report', { type: 'Something else', message: 'Hi' }).success, true);
+  assert.equal(bad.call(bad.signIn('admin'), 'getReports').data.length, 1);
+  assert.ok(bad.call(bad.signIn('admin'), 'getLog').data.some(l => l.Action === 'Report email failed' && l.Detail.includes('too many times')));
+  const typo = createBackend(); typo.props.OWNER_EMAIL = 'not-an-address';
+  typo.call(typo.signIn('student'), 'report', { type: 'Something else', message: 'Hi' });
+  assert.ok(typo.call(typo.signIn('admin'), 'getLog').data.some(l => l.Detail.includes('does not look like an email')));
+});
+
+test('the Owner can send a test email and sees which address is used (partly hidden)', () => {
+  const none = createBackend(), own0 = none.signIn('admin');
+  assert.match(none.call(own0, 'sendTestEmail').error, /No email address is set/);
+  assert.equal(none.call(own0, 'getAll').data.meta.email, '');
+  const b = createBackend(); b.props.OWNER_EMAIL = 'sarah@school.example'; const own = b.signIn('admin');
+  assert.equal(b.call(own, 'getAll').data.meta.email, 's***@school.example');
+  assert.deepEqual(b.call(own, 'sendTestEmail').data, { sent: true, to: 's***@school.example' });
+  assert.equal(b.stats.mails.length, 1);
+  assert.equal(b.call(b.signIn('principal'), 'sendTestEmail').error, 'Not allowed.');
+});
+
 test('activity log: staff actions are recorded, only the Owner reads it, wrong Owner passwords are noted', () => {
   const b = createBackend(), lib = b.signIn('librarian'), own = b.signIn('admin');
   const id = b.call(lib, 'addBook', { book, rid: 'l1' }).data.bookId;
@@ -229,6 +263,16 @@ test('activity log: staff actions are recorded, only the Owner reads it, wrong O
   assert.ok(log.some(l => l.Who === 'librarian' && l.Detail.includes('roll 1371')));
   assert.equal(b.call(lib, 'getLog').error, 'Not allowed.');
   const before = b.call(own, 'getLog').data.length; b.signIn('student'); assert.equal(b.call(own, 'getLog').data.length, before);   // student sign-ins are not logged
+});
+
+test('a missing Google Drive permission is explained in plain words, and authorizeAll reports each service', () => {
+  const b = createBackend({ denyDrive: true }), own = b.signIn('admin');
+  for (const e of [b.call(own, 'backupNow').error, b.call(own, 'getBackups').error]) { assert.match(e, /Google Drive permission is missing/); assert.match(e, /authorizeAll/); assert.ok(!e.includes('Required permissions')); }
+  assert.equal(b.call(own, 'getReports').success, true);   // everything else keeps working
+  b.authorizeAll();
+  assert.ok(b.stats.logs.some(l => l.startsWith('Google Drive (backups): PROBLEM')));
+  const ok = createBackend(); ok.authorizeAll();
+  assert.ok(ok.stats.logs.includes('Google Drive (backups): OK') && ok.stats.logs.includes('Email (report emails): OK'));
 });
 
 test('backups: a copy is made, only the newest 12 are kept, weekly backup can be switched on and off', () => {

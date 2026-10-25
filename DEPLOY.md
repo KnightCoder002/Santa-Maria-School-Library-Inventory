@@ -38,18 +38,17 @@ In Apps Script: **Project Settings** (gear icon) > **Script properties** > Add s
 **Time zone:** Project Settings > Time zone > Asia/Kolkata. Otherwise dates can shift by a day.
 
 ## 3. Deploy or update the backend (Apps Script)
-1. **Report emails (optional).** Open `Code.gs` and look at the very top for this line:
-   `const OWNER_EMAIL = 'PUT-YOUR-EMAIL-HERE@example.com';`
-   Replace the text between the quotes with the email address that should receive a message when someone reports a problem. It is the only line in the file you edit. Leave it alone and no emails are sent. (Alternative that survives future updates: add a Script property named `OWNER_EMAIL` with your address.)
+1. **Report emails (optional, recommended).** In Project Settings > Script properties add a property named exactly `OWNER_EMAIL` with your address as the value. Every problem report is then emailed to you, one email per report. (A line at the top of `Code.gs` can hold the address instead, but the property survives updates.) Optionally add `SITE_URL` (for example `https://your-site.vercel.app`) so each email includes a link to the Owner page.
+   To check it, sign in as Owner > Safety > Report emails > **Send a test email**.
 2. Paste the whole file into the editor.
-3. **Permissions.** This version also uses Google Drive (backups), email (report emails) and triggers (weekly backup). In the toolbar choose `authorizeAll`, press Run and approve the permissions once.
+3. **Permissions (do this before publishing).** This version also uses Google Drive (backups), email (report emails) and triggers (weekly backup). In the toolbar choose `authorizeAll`, press Run and approve the permissions. If Google warns that it has not verified the app, click Advanced > Go to (your project) > Allow. The log should then say OK for all three.
 4. **First time:** Deploy > New deployment > **Web app**, Execute as **Me**, access **Anyone**. Copy the **Web app URL** (ends in `/exec`).
    **Every later change:** Deploy > Manage deployments > pencil icon > Version: **New version** > Deploy. The URL stays the same.
 
 ## 4. Push the code with git
 ```
 npm install              # updates package-lock.json (commit it)
-npm test                 # 30 quick checks of the backend and the content
+npm test                 # 34 quick checks of the backend and the content
 git add .
 git commit -m "describe the change"
 git push
@@ -102,7 +101,8 @@ console.cloud.google.com > create a project > enable **Books API** > Credentials
 - **"This login is not set up yet: HASH_admin is missing":** the property is missing or misspelled (exactly `HASH_student`, `HASH_librarian`, `HASH_principal`, `HASH_admin`).
 - **"The saved password hash ... looks wrong":** copy it again from the Execution log.
 - **Every password says "Incorrect":** the hash was made with a different `SALT` or role. Run `checkSetup()`.
-- **Backups or emails do nothing, or "Authorization required":** run `authorizeAll` once in the editor and approve, then publish a New version.
+- **"Google Drive permission is missing" (or Google's own "You do not have permission to call DriveApp..."):** the web app has not been given Drive access yet. In the Apps Script editor: (1) choose `authorizeAll` in the toolbar and press Run; if Google says "hasn't verified this app", click Advanced > Go to (your project) > Allow; (2) read the log: each line should say OK; (3) **then** Deploy > Manage deployments > pencil icon > Version: **New version** > Deploy. The order matters: the permission must be granted before the new version is made. Still failing? Project Settings > tick "Show appsscript.json manifest file in editor"; if that file has an `oauthScopes` list, delete the whole list so Google detects the scopes itself.
+- **Report emails do not arrive:** (1) Owner > Safety > Report emails shows which address is used (partly hidden); if it says no address, the Script property is missing or misspelled (it must be exactly `OWNER_EMAIL`). (2) Press **Send a test email**: a message about permission means you need `authorizeAll` and a New version (see above). (3) Look in Owner > Activity for "Report email failed": it states the reason. (4) Check your spam folder. Google allows about 100 emails a day.
 - **"Backend unreachable" or invalid response:** `GAS_URL` is wrong, or the deployment's access is not "Anyone".
 - **A new feature says "Not allowed":** `Code.gs` was not republished as a new version.
 - **Camera does not open:** allow camera permission. It works only over HTTPS.

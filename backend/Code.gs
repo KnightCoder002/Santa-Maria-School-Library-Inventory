@@ -14,7 +14,7 @@ const ALL = ['student', 'librarian', 'principal', 'admin'], STAFF = ['librarian'
 const REMEMBER_DAYS = 30;   // how long "keep me signed in" lasts for students
 const ACL = { getAll: ALL, addBook: ['librarian'], updateBook: STAFF, checkout: ['librarian'], returnBook: STAFF, removeBook: ['principal'],
   listOpen: ['student'], listToggle: ['student'], listReset: STAFF, addGenre: ['principal'], report: REP,
-  getReports: OWNER, setReport: OWNER, getLog: OWNER, saveSettings: OWNER, saveQuotes: OWNER, setPassword: OWNER, signOutAll: OWNER,
+  getReports: OWNER, setReport: OWNER, getLog: OWNER, saveSettings: OWNER, saveQuotes: OWNER, setPassword: OWNER, signOutAll: OWNER, sendTestEmail: OWNER,
   backupNow: OWNER, getBackups: OWNER, setWeeklyBackup: OWNER };
 const INV = ['BookID', 'Title', 'Author', 'Genre', 'SubGenre', 'Available', 'AgeGroup', 'Condition', 'Language', 'ContainedWorks', 'ISBN'];
 
@@ -224,7 +224,7 @@ const H = {
   getAll(p, role) {
     const a = loadAll(role !== 'student'), res = { inventory: a.inventory, genres: a.genres, settings: a.settings, quotes: a.quotes };
     if (role !== 'student') res.checkouts = a.checkouts;   // roll numbers never reach students
-    if (role === 'admin') { const l = ss().getSheetByName('Lists'); res.meta = { lists: l ? Math.max(0, l.getLastRow() - 1) : 0, lastBackup: P.getProperty('LAST_BACKUP') || '' }; }
+    if (role === 'admin') { const l = ss().getSheetByName('Lists'); res.meta = { lists: l ? Math.max(0, l.getLastRow() - 1) : 0, lastBackup: P.getProperty('LAST_BACKUP') || '', email: ownerEmail() ? maskEmail(ownerEmail()) : '' }; }
     return res;
   },
   addBook(p, role) {
@@ -330,12 +330,12 @@ const H = {
     if (!msg || types.indexOf(p.type) < 0) throw new Error('Please describe the problem.');
     quota('rep_' + p.token, 5, 3600, 'Too many reports. Please try again later.');
     quota('rep_all', 60, 3600, 'Too many reports right now. Please try again later.');
-    return locked(() => {
+    locked(() => {
       repSheet().appendRow(['R-' + Date.now().toString(36).toUpperCase(), fmt(new Date()), role, p.type, msg, clean(p.contact, 80), 'Open', '']);
       logEvent(role, 'Report sent', p.type);
-      notifyOwner(p.type, role, msg, clean(p.contact, 80));
-      return { reported: true };
     });
+    notifyOwner(p.type, role, msg, clean(p.contact, 80));   // after the lock is released, so sending never makes others wait
+    return { reported: true };
   },
   getReports() { return read('Reports', repSheet()); },
   setReport(p, role) {
@@ -391,24 +391,56 @@ const H = {
     return res;
   },
   signOutAll(p, role) { return { token: signOutEverywhere(role) }; },
-  backupNow(p, role) { const r = doBackup(role); pruneBackups(12); return r; },
-  getBackups() { return { weekly: weeklyOn(), backups: listBackups() }; },
+  sendTestEmail(p, role) {
+    const to = ownerEmail();
+    if (!to) throw new Error('No email address is set. Add a Script property named OWNER_EMAIL with your address (DEPLOY.md, step 3).');
+    if (!validEmail(to)) throw new Error('The address saved in OWNER_EMAIL does not look like an email address.');
+    permGuard('Email', () => MailApp.sendEmail(to, 'Library: test email', 'This is a test message from the library website. Report emails are working.'));
+    logEvent(role, 'Sent a test email', maskEmail(to));
+    return { sent: true, to: maskEmail(to) };
+  },
+  backupNow(p, role) { return permGuard('Google Drive', () => { const r = doBackup(role); pruneBackups(12); return r; }); },
+  getBackups() { return permGuard('Google Drive', () => ({ weekly: weeklyOn(), backups: listBackups() })); },
   setWeeklyBackup(p, role) {
-    ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'weeklyBackup').forEach(t => ScriptApp.deleteTrigger(t));
-    if (p.on) ScriptApp.newTrigger('weeklyBackup').timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(2).create();
-    logEvent(role, p.on ? 'Turned on weekly backup' : 'Turned off weekly backup', '');
-    return { weekly: !!p.on };
+    return permGuard('Triggers', () => {
+      ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'weeklyBackup').forEach(t => ScriptApp.deleteTrigger(t));
+      if (p.on) ScriptApp.newTrigger('weeklyBackup').timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(2).create();
+      logEvent(role, p.on ? 'Turned on weekly backup' : 'Turned off weekly backup', '');
+      return { weekly: !!p.on };
+    });
   }
 };
+// Turns Google's "You do not have permission to call ..." into plain instructions for the Owner.
+function permGuard(what, fn) {
+  try { return fn(); }
+  catch (e) {
+    if (/permission|authori[sz]ation|not allowed to call/i.test(String(e.message))) throw new Error(what + ' permission is missing. In the Apps Script editor choose authorizeAll in the toolbar, press Run and approve, then publish a New version (Deploy > Manage deployments > pencil > New version). See DEPLOY.md, step 3.');
+    throw e;
+  }
+}
 function signOutEverywhere(who) {   // everyone (students who chose "keep me signed in" too) must sign in again; the Owner gets a fresh sign-in
   P.setProperty('EPOCH', String((+P.getProperty('EPOCH') || 0) + 1));
   logEvent(who, 'Signed everyone out', '');
   return newSession('admin');
 }
+// The address comes from the Script property OWNER_EMAIL (the line at the top of this file is only a fallback).
+function ownerEmail() {
+  const names = ['OWNER_EMAIL', 'OWNER_MAIL', 'EMAIL'];   // the first one that is set; OWNER_EMAIL is the documented name
+  for (let i = 0; i < names.length; i++) { const v = String(P.getProperty(names[i]) || '').trim(); if (v) return v; }
+  const v = String(OWNER_EMAIL || '').trim();
+  return v.indexOf('PUT-YOUR-EMAIL-HERE') >= 0 ? '' : v;
+}
+const validEmail = e => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
+const maskEmail = e => String(e).replace(/^(.).*(@.*)$/, '$1***$2');
+// Sends one email for each report. A failure never blocks the report; it is written to the activity log instead.
 function notifyOwner(type, role, msg, contact) {
-  const to = P.getProperty('OWNER_EMAIL') || OWNER_EMAIL;   // a Script property named OWNER_EMAIL also works and survives updates
-  if (!to || to.indexOf('PUT-YOUR-EMAIL-HERE') >= 0) return;
-  try { MailApp.sendEmail(to, 'Library report: ' + type, 'From: ' + role + (contact ? ' (' + contact + ')' : '') + '\n\n' + msg + '\n\nOpen the Owner page to resolve it.'); } catch (e) {}
+  const to = ownerEmail();
+  if (!to) return;
+  try {
+    if (!validEmail(to)) throw new Error('OWNER_EMAIL does not look like an email address');
+    const site = String(P.getProperty('SITE_URL') || '').trim().replace(/\/+$/, '');
+    MailApp.sendEmail(to, 'Library report: ' + type, 'A new problem report was sent.\n\nType: ' + type + '\nFrom: ' + role + (contact ? ' (' + contact + ')' : '') + '\nDate: ' + fmt(new Date()) + '\n\nMessage:\n' + msg + '\n\n' + (site ? 'Open the Owner page to answer or resolve it: ' + site + '/#owner' : 'Open the Owner page to answer or resolve it.'));
+  } catch (e) { logEvent('System', 'Report email failed', String(e.message).slice(0, 150)); }
 }
 // ── Backups: a dated copy of the whole Sheet in a Drive folder called "Library backups" ──
 function backupFolder() { const it = DriveApp.getFoldersByName('Library backups'); return it.hasNext() ? it.next() : DriveApp.createFolder('Library backups'); }
@@ -424,9 +456,14 @@ function pruneBackups(keep) { backupFiles().slice(keep).forEach(f => f.setTrashe
 function listBackups() { return backupFiles().slice(0, 10).map(f => ({ name: f.getName(), url: f.getUrl() })); }
 function weeklyOn() { return ScriptApp.getProjectTriggers().some(t => t.getHandlerFunction() === 'weeklyBackup'); }
 function weeklyBackup() { doBackup('Automatic'); pruneBackups(12); }   // run by the weekly trigger
-// Run this once from the editor after pasting a new version: it makes Google ask for the permissions the Owner tools need
-// (Drive for backups, Gmail for report emails, triggers for the weekly backup).
-function authorizeAll() { DriveApp.getRootFolder(); MailApp.getRemainingDailyQuota(); ScriptApp.getProjectTriggers(); Logger.log('All permissions are in place.'); }
+// Run this once from the editor after pasting a new version. It makes Google ask for the permissions the Owner tools need
+// (Drive for backups, email for report emails, triggers for the weekly backup) and then tells you whether each one works.
+// If Google shows "hasn't verified this app": Advanced > Go to (your project) > Allow.
+function authorizeAll() {
+  const tests = { 'Google Drive (backups)': () => DriveApp.getFileById(SHEET_ID).getName(), 'Email (report emails)': () => MailApp.getRemainingDailyQuota(), 'Triggers (weekly backup)': () => ScriptApp.getProjectTriggers() };
+  Object.keys(tests).forEach(k => { try { tests[k](); Logger.log(k + ': OK'); } catch (e) { Logger.log(k + ': PROBLEM - ' + e.message); } });
+  Logger.log('If every line says OK, now publish a New version: Deploy > Manage deployments > pencil > Version: New version > Deploy.');
+}
 function repSheet() {
   const s = tabOf('Reports', ['ReportID', 'Date', 'Role', 'Type', 'Message', 'Contact', 'Status', 'Notes']);
   if (!P.getProperty('rep_notes_ok')) { if (!s.getRange(1, 8).getValue()) s.getRange(1, 8).setValue('Notes'); P.setProperty('rep_notes_ok', '1'); }
@@ -446,6 +483,7 @@ function makeHash() { Logger.log(pwHash('student', 'CHANGE-THIS-PASSWORD')); }
 // Finds setup mistakes. Set `role` to the login that fails and `pw` to the password you type on the site, press Run.
 function checkSetup() {
   const role = 'admin', pw = 'CHANGE-THIS-PASSWORD', roles = ['student', 'librarian', 'principal', 'admin'];
+  Logger.log('OWNER_EMAIL: ' + (ownerEmail() ? 'set (' + maskEmail(ownerEmail()) + ')' : 'not set, so report emails are off'));
   ['SHEET_ID', 'SALT'].concat(roles.map(r => 'HASH_' + r)).forEach(k => {
     const v = P.getProperty(k);
     Logger.log(k + ': ' + (v == null ? 'MISSING' : k.indexOf('HASH_') === 0 ? (/^[a-f0-9]{64}$/.test(String(v).trim().toLowerCase()) ? 'ok' : 'WRONG FORMAT (' + v.length + ' characters, it must be 64 letters and digits)') : 'ok'));
