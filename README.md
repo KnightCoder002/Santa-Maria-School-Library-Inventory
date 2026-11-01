@@ -1,4 +1,4 @@
-# School Library
+# School Library Inventory Website
 
 Vite + Tailwind v4 + Motion front end on Vercel, with Google Sheets as the database and Apps Script as the backend.
 `legacy/` holds the previous single-file version for reference (not deployed).
